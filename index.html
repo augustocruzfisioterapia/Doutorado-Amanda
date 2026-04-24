@@ -1,0 +1,3009 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    
+    <!-- ============================================= -->
+    <!-- PWA - Manifest e Configurações                 -->
+    <!-- ============================================= -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#6C5CE7">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Doutorado Amanda">
+    <meta name="description" content="Aplicação desenvolvida com carinho para a pesquisa de doutorado da Amanda. Sistema completo para cadastro e avaliação de pacientes oncológicas, com goniometria, escalas validadas, histórico em timeline e exportação de dados. PWA instalável, funciona offline no tablet. Cada detalhe pensado com amor e ciência. 💜">
+    
+    <!-- Ícones PWA -->
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192x192.png">
+    <link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192x192.png">
+    
+    <title>Doutorado - Sistema de Avaliação</title>
+    
+    <!-- SheetJS para exportação Excel -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #F5F7FA;
+            color: #2C3E50;
+            padding: 16px;
+            max-width: 600px;
+            margin: 0 auto;
+            padding-bottom: 30px;
+        }
+        
+        .app-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding: 10px 0;
+        }
+        
+        .home-btn {
+            background: white;
+            border: none;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            font-size: 22px;
+            transition: all 0.2s;
+            color: #6C5CE7;
+            text-decoration: none;
+        }
+        
+        .home-btn:active {
+            transform: scale(0.95);
+            background: #F0F3F7;
+        }
+        
+        .app-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2C3E50;
+            text-align: center;
+            flex: 1;
+        }
+        
+        .header-logo {
+            width: 44px;
+            height: 44px;
+            object-fit: contain;
+            border-radius: 0;
+        }
+        
+        .screen {
+            display: none;
+            animation: fadeIn 0.3s;
+        }
+        
+        .screen.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(100px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        .progress-container {
+            background: #E0E6ED;
+            height: 8px;
+            border-radius: 20px;
+            margin: 20px 0 30px;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #6C5CE7, #A463F5);
+            border-radius: 20px;
+            transition: width 0.3s ease;
+        }
+        
+        .step-indicator {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 14px;
+            color: #7F8C8D;
+        }
+        
+        .step {
+            display: none;
+        }
+        
+        .step.active {
+            display: block;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 24px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        
+        h2 {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 24px;
+            color: #2C3E50;
+        }
+        
+        h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin: 20px 0 15px;
+            color: #34495E;
+        }
+        
+        h4 {
+            font-size: 14px;
+            font-weight: 600;
+            margin: 15px 0 10px;
+            color: #5D6D7E;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: #5D6D7E;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 14px;
+            font-size: 16px;
+            border: 1.5px solid #E0E6ED;
+            border-radius: 16px;
+            background: #FAFBFC;
+            transition: all 0.2s;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            border-color: #6C5CE7;
+            background: white;
+            outline: none;
+            box-shadow: 0 0 0 4px rgba(108,92,231,0.1);
+        }
+        
+        input[readonly] {
+            background: #F0F3F7;
+            color: #7F8C8D;
+        }
+        
+        .home-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-top: 30px;
+        }
+        
+        .home-btn-large {
+            background: white;
+            border: none;
+            padding: 24px;
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            transition: all 0.2s;
+            text-align: left;
+            font-size: 18px;
+            font-weight: 600;
+            color: #2C3E50;
+            border: 2px solid transparent;
+        }
+        
+        .home-btn-large:active {
+            transform: scale(0.98);
+            border-color: #6C5CE7;
+        }
+        
+        .home-btn-large .emoji {
+            font-size: 32px;
+        }
+        
+        .home-btn-large .text {
+            flex: 1;
+        }
+        
+        .home-btn-large .small {
+            font-size: 14px;
+            font-weight: 400;
+            color: #7F8C8D;
+            margin-top: 4px;
+        }
+        
+        .btn-alegrar {
+            background: linear-gradient(135deg, #FF6B6B, #FF8E53, #FFD93D, #6BCB77, #4D96FF, #9B59B6);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 30px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: auto;
+            display: inline-block;
+            margin-top: 10px;
+            box-shadow: 0 4px 15px rgba(255,107,107,0.3);
+        }
+        
+        .btn-alegrar:active {
+            transform: scale(0.95);
+            box-shadow: 0 2px 8px rgba(255,107,107,0.3);
+        }
+        
+        .btn-danger {
+            border-color: #E74C3C !important;
+        }
+        
+        .btn-danger .text {
+            color: #E74C3C !important;
+        }
+        
+        .btn-danger .small {
+            color: #E74C3C !important;
+        }
+        
+        .btn-export {
+            background: #27AE60;
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 16px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 100%;
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .btn-export:active {
+            background: #219A52;
+            transform: scale(0.98);
+        }
+        
+        .search-box {
+            background: white;
+            border-radius: 20px;
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        
+        .search-box input {
+            border: none;
+            padding: 12px 0;
+            background: transparent;
+            box-shadow: none;
+            border-radius: 0;
+        }
+        
+        .search-box input:focus {
+            box-shadow: none;
+        }
+        
+        .search-icon {
+            margin-right: 12px;
+            font-size: 20px;
+        }
+        
+        .paciente-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .paciente-item {
+            background: white;
+            padding: 16px;
+            border-radius: 16px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        }
+        
+        .paciente-item:active {
+            background: #F0F3F7;
+        }
+        
+        .paciente-nome {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        
+        .paciente-info {
+            font-size: 13px;
+            color: #7F8C8D;
+            display: flex;
+            gap: 15px;
+        }
+        
+        .avaliacao-item {
+            background: white;
+            padding: 16px;
+            border-radius: 16px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .avaliacao-item:active {
+            background: #F0F3F7;
+        }
+        
+        .avaliacao-item-info {
+            flex: 1;
+        }
+        
+        .avaliacao-item-data {
+            font-weight: 600;
+            color: #6C5CE7;
+            margin-bottom: 4px;
+        }
+        
+        .avaliacao-item-detalhes {
+            font-size: 13px;
+            color: #7F8C8D;
+        }
+        
+        .switch-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 8px;
+        }
+        
+        .switch-option {
+            flex: 1;
+            text-align: center;
+            padding: 12px;
+            background: #F0F3F7;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+        
+        .switch-option.selected {
+            background: #6C5CE7;
+            color: white;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 8px;
+        }
+        
+        .checkbox-chip {
+            padding: 10px 16px;
+            background: #F0F3F7;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+        
+        .checkbox-chip.selected {
+            background: #6C5CE7;
+            color: white;
+        }
+        
+        .conditional-field {
+            margin-top: 15px;
+            padding: 15px;
+            background: #F8F9FA;
+            border-radius: 16px;
+            display: none;
+        }
+        
+        .conditional-field.show {
+            display: block;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+        
+        .btn {
+            flex: 1;
+            padding: 16px;
+            border: none;
+            border-radius: 16px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background: #6C5CE7;
+            color: white;
+        }
+        
+        .btn-primary:active {
+            background: #5B4BC4;
+            transform: scale(0.98);
+        }
+        
+        .btn-secondary {
+            background: white;
+            color: #6C5CE7;
+            border: 1.5px solid #6C5CE7;
+        }
+        
+        .btn-success {
+            background: #27AE60;
+            color: white;
+        }
+        
+        .btn-edit {
+            background: #F39C12;
+            color: white;
+        }
+        
+        .fitzpatrick-img {
+            width: 100%;
+            border-radius: 16px;
+            margin: 15px 0;
+        }
+        
+        .goniometria-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .goniometria-header {
+            font-weight: 600;
+            color: #5D6D7E;
+            font-size: 13px;
+        }
+        
+        .goniometria-grid input {
+            padding: 10px;
+            text-align: center;
+        }
+        
+        .legend {
+            font-size: 12px;
+            color: #7F8C8D;
+            font-style: italic;
+            margin-top: 5px;
+            margin-bottom: 15px;
+        }
+        
+        .timeline {
+            position: relative;
+            padding-left: 30px;
+        }
+        
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 8px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #E0E6ED;
+        }
+        
+        .timeline-item {
+            position: relative;
+            margin-bottom: 30px;
+            cursor: pointer;
+        }
+        
+        .timeline-dot {
+            position: absolute;
+            left: -26px;
+            top: 5px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #6C5CE7;
+            border: 3px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .timeline-content {
+            background: white;
+            padding: 16px;
+            border-radius: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            transition: all 0.2s;
+        }
+        
+        .timeline-item:active .timeline-content {
+            background: #F8F9FA;
+            transform: scale(0.98);
+        }
+        
+        .timeline-date {
+            font-weight: 600;
+            color: #6C5CE7;
+            margin-bottom: 8px;
+        }
+        
+        .timeline-data {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            font-size: 14px;
+        }
+        
+        .timeline-hint {
+            margin-top: 10px;
+            font-size: 13px;
+            color: #6C5CE7;
+        }
+        
+        .fab {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            border-radius: 30px;
+            background: #6C5CE7;
+            color: white;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(108,92,231,0.4);
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+        
+        .fab:active {
+            transform: scale(0.95);
+            background: #5B4BC4;
+        }
+        
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: #7F8C8D;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 24px;
+            max-width: 500px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+            padding: 24px;
+            animation: slideUp 0.3s;
+        }
+        
+        .modal-image-content {
+            background: transparent;
+            padding: 0;
+            max-width: 90%;
+            max-height: 90vh;
+            border-radius: 16px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .modal-image-content img {
+            width: 100%;
+            height: auto;
+            max-height: 85vh;
+            object-fit: contain;
+            display: block;
+            border-radius: 16px;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #E0E6ED;
+        }
+        
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2C3E50;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 30px;
+            cursor: pointer;
+            color: #7F8C8D;
+            padding: 5px;
+            line-height: 1;
+        }
+        
+        .modal-close-white {
+            color: white;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.5);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            z-index: 1001;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .modal-body {
+            color: #2C3E50;
+        }
+        
+        .modal-section {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #F0F3F7;
+        }
+        
+        .modal-section:last-child {
+            border-bottom: none;
+        }
+        
+        .modal-section h4 {
+            color: #6C5CE7;
+            margin-bottom: 12px;
+            font-size: 16px;
+        }
+        
+        .modal-section h5 {
+            color: #5D6D7E;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+        
+        .modal-field {
+            display: flex;
+            margin-bottom: 8px;
+        }
+        
+        .modal-field-label {
+            font-weight: 500;
+            width: 120px;
+            color: #5D6D7E;
+        }
+        
+        .modal-field-value {
+            flex: 1;
+            color: #2C3E50;
+        }
+        
+        .footer-message {
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            color: #7F8C8D;
+            font-size: 14px;
+            font-style: italic;
+            border-top: 1px solid #E0E6ED;
+        }
+        
+        .footer-message span {
+            color: #E74C3C;
+            font-size: 16px;
+        }
+        
+        /* Banner de Instalação PWA */
+        .install-banner {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            padding: 16px;
+            box-shadow: 0 -4px 12px rgba(0,0,0,0.1);
+            z-index: 999;
+            animation: slideUp 0.3s;
+        }
+        
+        .install-banner-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .install-banner-icon {
+            font-size: 32px;
+        }
+        
+        .install-banner-text {
+            flex: 1;
+        }
+        
+        .install-banner-title {
+            font-weight: 600;
+            color: #2C3E50;
+        }
+        
+        .install-banner-subtitle {
+            font-size: 14px;
+            color: #7F8C8D;
+        }
+        
+        .install-banner-btn {
+            background: #6C5CE7;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        
+        .install-banner-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #7F8C8D;
+            padding: 0 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header com Botão Home e Logo -->
+    <div class="app-header">
+        <button class="home-btn" onclick="irParaHome()">🏠</button>
+        <div class="app-title" id="screenTitle">Início</div>
+        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTKjZJuCjQ1PKWa5sd6NLDKhNdTnDYHwjjjow&s" 
+             alt="Logo Instituição" 
+             class="header-logo"
+             onerror="this.style.display='none'">
+    </div>
+
+    <!-- ============================================= -->
+    <!-- TELA INICIAL                                   -->
+    <!-- ============================================= -->
+    <div class="screen active" id="homeScreen">
+        <div class="card">
+            <h2>Bem-vinda, futura Profa. Dra. Amanda! 👩‍🎓</h2>
+            <p style="color: #7F8C8D; margin-bottom: 20px;">Selecione uma opção para continuar</p>
+            
+            <div class="home-buttons">
+                <div class="home-btn-large" onclick="mostrarNovaPaciente()">
+                    <span class="emoji">👤➕</span>
+                    <div class="text">
+                        Nova Paciente
+                        <div class="small">Cadastrar uma nova paciente no sistema</div>
+                    </div>
+                </div>
+                
+                <div class="home-btn-large" onclick="mostrarBuscaPaciente()">
+                    <span class="emoji">🔍</span>
+                    <div class="text">
+                        Encontrar Paciente
+                        <div class="small">Buscar por nome ou registro hospitalar</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Botão Alegrar o meu dia -->
+            <div style="text-align: center; margin-top: 15px;">
+                <button class="btn-alegrar" onclick="alegrarMeuDia()">
+                    🌈 Alegrar o meu dia 🌈
+                </button>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h3>📊 Resumo Rápido</h3>
+            <div style="display: flex; justify-content: space-around; text-align: center;">
+                <div>
+                    <div style="font-size: 28px; font-weight: 700; color: #6C5CE7;" id="totalPacientes">0</div>
+                    <div style="font-size: 13px; color: #7F8C8D;">Pacientes</div>
+                </div>
+                <div>
+                    <div style="font-size: 28px; font-weight: 700; color: #6C5CE7;" id="totalAvaliacoes">0</div>
+                    <div style="font-size: 13px; color: #7F8C8D;">Avaliações</div>
+                </div>
+                <div>
+                    <div style="font-size: 28px; font-weight: 700; color: #6C5CE7;" id="ultimaAvaliacao">-</div>
+                    <div style="font-size: 13px; color: #7F8C8D;">Última</div>
+                </div>
+            </div>
+            
+            <button class="btn-export" onclick="exportarParaExcel()">
+                📊 Exportar para Excel (.xls)
+            </button>
+        </div>
+        
+        <!-- Mensagem de Motivação -->
+        <div class="footer-message">
+            <span>❤️</span><br>
+            Nunca desista, lembre-se que te amamos e estamos com você até o fim! 
+            <span>❤️</span>
+        </div>
+    </div>
+
+    <!-- ============================================= -->
+    <!-- TELA DE BUSCA DE PACIENTE                      -->
+    <!-- ============================================= -->
+    <div class="screen" id="buscaScreen">
+        <div class="card">
+            <h2>🔍 Encontrar Paciente</h2>
+            
+            <div class="search-box">
+                <span class="search-icon">🔎</span>
+                <input type="text" id="buscaInput" placeholder="Nome ou Registro Hospitalar" onkeyup="buscarPacientes()">
+            </div>
+            
+            <div class="paciente-list" id="pacienteList"></div>
+        </div>
+        
+        <div class="footer-message">
+            <span>❤️</span><br>
+            Nunca desista, lembre-se que te amamos e estamos com você até o fim! 
+            <span>❤️</span>
+        </div>
+    </div>
+
+    <!-- ============================================= -->
+    <!-- TELA DE AÇÕES DA PACIENTE                      -->
+    <!-- ============================================= -->
+    <div class="screen" id="acoesPacienteScreen">
+        <div class="card">
+            <h2 id="pacienteSelecionadoNome">Paciente</h2>
+            <p style="color: #7F8C8D; margin-bottom: 20px;" id="pacienteSelecionadoInfo"></p>
+            
+            <div class="home-buttons">
+                <div class="home-btn-large" onclick="iniciarNovaAvaliacao()">
+                    <span class="emoji">📝➕</span>
+                    <div class="text">
+                        Nova Avaliação
+                        <div class="small" id="proximaAvaliacaoTexto">Primeira avaliação</div>
+                    </div>
+                </div>
+                
+                <div class="home-btn-large" onclick="mostrarHistorico()">
+                    <span class="emoji">📋</span>
+                    <div class="text">
+                        Consultar Histórico
+                        <div class="small">Visualizar avaliações anteriores</div>
+                    </div>
+                </div>
+                
+                <div class="home-btn-large" onclick="mostrarListaEditarAvaliacao()">
+                    <span class="emoji">✏️📋</span>
+                    <div class="text">
+                        Editar Avaliação
+                        <div class="small">Modificar uma avaliação existente</div>
+                    </div>
+                </div>
+                
+                <div class="home-btn-large" onclick="editarCadastro()">
+                    <span class="emoji">✏️</span>
+                    <div class="text">
+                        Editar Cadastro
+                        <div class="small">Atualizar dados da paciente</div>
+                    </div>
+                </div>
+                
+                <div class="home-btn-large btn-danger" onclick="excluirPaciente()">
+                    <span class="emoji">🗑️</span>
+                    <div class="text">
+                        Excluir Paciente
+                        <div class="small">Remover permanentemente do estudo</div>
+                    </div>
+                </div>
+            </div>
+            
+            <button class="btn-export" onclick="exportarPacienteUnica()">
+                📊 Exportar esta paciente (.xls)
+            </button>
+        </div>
+        
+        <div class="footer-message">
+            <span>❤️</span><br>
+            Nunca desista, lembre-se que te amamos e estamos com você até o fim! 
+            <span>❤️</span>
+        </div>
+    </div>
+
+    <!-- ============================================= -->
+    <!-- TELA DE LISTA DE AVALIAÇÕES PARA EDITAR        -->
+    <!-- ============================================= -->
+    <div class="screen" id="listaAvaliacoesScreen">
+        <div class="card">
+            <h2>✏️ Selecione a Avaliação para Editar</h2>
+            <p style="color: #7F8C8D; margin-bottom: 20px;" id="listaAvaliacoesPacienteInfo"></p>
+            
+            <div class="avaliacao-list" id="avaliacaoListContainer"></div>
+        </div>
+        
+        <div class="footer-message">
+            <span>❤️</span><br>
+            Nunca desista, lembre-se que te amamos e estamos com você até o fim! 
+            <span>❤️</span>
+        </div>
+    </div>
+
+    <!-- ============================================= -->
+    <!-- TELA DE CADASTRO (5 PASSOS)                    -->
+    <!-- ============================================= -->
+    <div class="screen" id="cadastroScreen">
+        <div class="step-indicator">
+            <span onclick="cadastroPassoAnterior()" style="cursor: pointer;" id="cadastroVoltar">← Voltar</span>
+            <span><span id="passoAtualTexto">Passo 1</span> de 5</span>
+            <span></span>
+        </div>
+        <div class="progress-container">
+            <div class="progress-bar" id="progressBar" style="width: 20%"></div>
+        </div>
+
+        <!-- PASSO 1: Identificação -->
+        <div class="step active" id="step1">
+            <div class="card">
+                <h2>👤 Identificação da Paciente</h2>
+                
+                <div class="input-group">
+                    <label>Nome Completo *</label>
+                    <input type="text" id="nome" placeholder="Ex: Maria Silva" required>
+                </div>
+                
+                <div class="input-group">
+                    <label>Registro Hospitalar *</label>
+                    <input type="text" id="registro" placeholder="Ex: RH12345" required>
+                </div>
+                
+                <div class="input-group">
+                    <label>Data de Nascimento *</label>
+                    <input type="text" id="nascimento" placeholder="DD/MM/AAAA" inputmode="numeric" maxlength="10" required>
+                </div>
+                
+                <div class="input-group">
+                    <label>Idade</label>
+                    <input type="text" id="idade" readonly placeholder="Calculada automaticamente">
+                </div>
+                
+                <div class="input-group">
+                    <label>Estado Civil</label>
+                    <select id="estadoCivil">
+                        <option value="">Selecione...</option>
+                        <option>Solteira</option>
+                        <option>Casada</option>
+                        <option>Divorciada</option>
+                        <option>Viúva</option>
+                        <option>União Estável</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- PASSO 2: Contato e Demografia -->
+        <div class="step" id="step2">
+            <div class="card">
+                <h2>📞 Contato e Demografia</h2>
+                
+                <div class="input-group">
+                    <label>Endereço</label>
+                    <input type="text" id="endereco" placeholder="Rua, número, bairro, cidade">
+                </div>
+                
+                <div class="input-group">
+                    <label>Telefone (Obrigatório) *</label>
+                    <input type="tel" id="telefone" placeholder="(11) 99999-9999" required>
+                </div>
+                
+                <div class="input-group">
+                    <label>Telefone para Recado (Opcional)</label>
+                    <input type="tel" id="telefoneRecado" placeholder="(11) 99999-9999">
+                </div>
+                
+                <div class="input-group">
+                    <label>Profissão</label>
+                    <input type="text" id="profissao" placeholder="Ex: Professora">
+                </div>
+                
+                <div class="input-group">
+                    <label>Peso (kg)</label>
+                    <input type="number" id="peso" step="0.1" placeholder="Ex: 70.5" inputmode="decimal">
+                </div>
+                
+                <div class="input-group">
+                    <label>Altura (m)</label>
+                    <input type="number" id="altura" step="0.01" placeholder="Ex: 1.65" inputmode="decimal">
+                </div>
+                
+                <div class="input-group">
+                    <label>Escolaridade</label>
+                    <select id="escolaridade">
+                        <option value="">Selecione...</option>
+                        <option>Ensino Fundamental Incompleto</option>
+                        <option>Ensino Fundamental Completo</option>
+                        <option>Ensino Médio Incompleto</option>
+                        <option>Ensino Médio Completo</option>
+                        <option>Superior Incompleto</option>
+                        <option>Superior Completo</option>
+                        <option>Pós-graduação</option>
+                    </select>
+                </div>
+                
+                <div class="input-group">
+                    <label>Raça</label>
+                    <select id="raca">
+                        <option value="">Selecione...</option>
+                        <option>Branca</option>
+                        <option>Preta</option>
+                        <option>Parda</option>
+                        <option>Amarela</option>
+                        <option>Indígena</option>
+                    </select>
+                </div>
+                
+                <div class="input-group">
+                    <label>Dominância (Função)</label>
+                    <select id="dominancia">
+                        <option value="">Selecione...</option>
+                        <option>Destra</option>
+                        <option>Canhota</option>
+                        <option>Ambidestra</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- PASSO 3: Antecedentes -->
+        <div class="step" id="step3">
+            <div class="card">
+                <h2>📋 Antecedentes</h2>
+                
+                <h3>Cirurgias Prévias na Mama ou Axila</h3>
+                <div class="switch-group" id="cirurgiaPreviaSwitch">
+                    <div class="switch-option" data-value="sim">Sim</div>
+                    <div class="switch-option selected" data-value="nao">Não</div>
+                </div>
+                <div class="conditional-field" id="cirurgiaPreviaDetalhe">
+                    <label>Descreva a cirurgia prévia:</label>
+                    <textarea id="cirurgiaPreviaTexto" rows="2" placeholder="Tipo de cirurgia, data aproximada..."></textarea>
+                </div>
+                
+                <h3>Doenças Associadas</h3>
+                <div class="checkbox-group" id="doencasAssociadas">
+                    <div class="checkbox-chip" data-value="DM">DM (Diabetes)</div>
+                    <div class="checkbox-chip" data-value="HAS">HAS (Hipertensão)</div>
+                </div>
+                <div class="input-group">
+                    <label>Outras doenças:</label>
+                    <input type="text" id="outrasDoencas" placeholder="Descreva outras doenças...">
+                </div>
+                
+                <h3>Antecedentes Ortopédicos</h3>
+                <div class="checkbox-group" id="antecedentesOrtopedicos">
+                    <div class="checkbox-chip" data-value="Ombro congelado">Ombro congelado</div>
+                    <div class="checkbox-chip" data-value="Síndrome do impacto">Síndrome do impacto</div>
+                    <div class="checkbox-chip" data-value="Alterações do Manguito Rotador">Alterações do Manguito</div>
+                    <div class="checkbox-chip" data-value="Cirurgias prévias em cintura escapular e MS">Cirurgias prévias</div>
+                    <div class="checkbox-chip" data-value="Fraturas">Fraturas</div>
+                    <div class="checkbox-chip" data-value="Tendinite/Bursite">Tendinite/Bursite</div>
+                </div>
+                
+                <h3>Antecedentes Pessoais - Tabagismo</h3>
+                <div class="switch-group" id="tabagismoSwitch">
+                    <div class="switch-option" data-value="sim">Sim</div>
+                    <div class="switch-option selected" data-value="nao">Não</div>
+                </div>
+                <div class="conditional-field" id="tabagismoDetalhe">
+                    <div class="input-group">
+                        <label>Quantos cigarros por dia?</label>
+                        <input type="number" id="cigarrosDia" placeholder="Ex: 10" inputmode="numeric">
+                    </div>
+                    <div class="input-group">
+                        <label>Há quantos anos fuma?</label>
+                        <input type="number" id="anosFumando" placeholder="Ex: 15" inputmode="numeric">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PASSO 4: História Ginecológica e Cirurgia -->
+        <div class="step" id="step4">
+            <div class="card">
+                <h2>🌸 História Ginecológica</h2>
+                
+                <h3>Menopausa</h3>
+                <div class="switch-group" id="menopausaSwitch">
+                    <div class="switch-option" data-value="sim">Sim</div>
+                    <div class="switch-option selected" data-value="nao">Não</div>
+                </div>
+                
+                <h3>Uso de Anticoncepcional</h3>
+                <div class="switch-group" id="anticoncepcionalSwitch">
+                    <div class="switch-option" data-value="sim">Sim</div>
+                    <div class="switch-option selected" data-value="nao">Não</div>
+                </div>
+                <div class="conditional-field" id="anticoncepcionalDetalhe">
+                    <label>Por quanto tempo usou?</label>
+                    <input type="text" id="tempoAnticoncepcional" placeholder="Ex: 5 anos">
+                </div>
+                
+                <h3>Medicamentos em Uso</h3>
+                <textarea id="medicamentos" rows="3" placeholder="Liste os medicamentos..."></textarea>
+            </div>
+            
+            <div class="card">
+                <h2>🏥 Dados da Cirurgia Atual</h2>
+                
+                <div class="input-group">
+                    <label>Data da Cirurgia</label>
+                    <input type="text" id="dataCirurgia" placeholder="DD/MM/AAAA" inputmode="numeric" maxlength="10">
+                </div>
+                
+                <h3>Lado da Mama Operada</h3>
+                <div class="checkbox-group" id="ladoMama">
+                    <div class="checkbox-chip" data-value="Direita">Direita</div>
+                    <div class="checkbox-chip" data-value="Esquerda">Esquerda</div>
+                </div>
+                
+                <h3>Tipo de Cirurgia</h3>
+                <div class="checkbox-group" id="tipoCirurgia">
+                    <div class="checkbox-chip" data-value="Mastectomia">Mastectomia</div>
+                    <div class="checkbox-chip" data-value="Quadrantectomia">Quadrantectomia</div>
+                    <div class="checkbox-chip" data-value="Nodulectomia">Nodulectomia</div>
+                    <div class="checkbox-chip" data-value="Setorectomia">Setorectomia</div>
+                </div>
+                
+                <div class="conditional-field" id="tipoPorLado">
+                    <h4>Especifique o tipo de cirurgia para cada lado:</h4>
+                    <div id="tipoPorLadoDireita" style="display: none;">
+                        <label><strong>Mama Direita:</strong></label>
+                        <div class="checkbox-group" id="tipoCirurgiaDireita"></div>
+                    </div>
+                    <div id="tipoPorLadoEsquerda" style="display: none;">
+                        <label><strong>Mama Esquerda:</strong></label>
+                        <div class="checkbox-group" id="tipoCirurgiaEsquerda"></div>
+                    </div>
+                </div>
+                
+                <h3>BLS (Biópsia de Linfonodo Sentinela)</h3>
+                <div class="switch-group" id="blsSwitch">
+                    <div class="switch-option selected" data-value="nao">Não</div>
+                    <div class="switch-option" data-value="sim">Sim</div>
+                </div>
+                <div class="conditional-field" id="blsDetalhe">
+                    <div class="switch-group" id="blsResultado">
+                        <div class="switch-option selected" data-value="positivo">Positivo</div>
+                        <div class="switch-option" data-value="negativo">Negativo</div>
+                    </div>
+                    <div class="input-group">
+                        <label>Linfonodos Retirados</label>
+                        <input type="number" id="blsRetirados" inputmode="numeric">
+                    </div>
+                    <div class="input-group">
+                        <label>Linfonodos Comprometidos</label>
+                        <input type="number" id="blsComprometidos" inputmode="numeric">
+                    </div>
+                    
+                    <div class="conditional-field" id="esvaziamentoField">
+                        <h4>Esvaziamento Axilar</h4>
+                        <div class="switch-group" id="esvaziamentoSwitch">
+                            <div class="switch-option selected" data-value="nao">Não</div>
+                            <div class="switch-option" data-value="sim">Sim</div>
+                        </div>
+                        <div class="conditional-field" id="esvaziamentoDetalhe">
+                            <div class="switch-group" id="esvaziamentoResultado">
+                                <div class="switch-option selected" data-value="positivo">Positivo</div>
+                                <div class="switch-option" data-value="negativo">Negativo</div>
+                            </div>
+                            <div class="input-group">
+                                <label>Linfonodos Retirados</label>
+                                <input type="number" id="esvaziamentoRetirados" inputmode="numeric">
+                            </div>
+                            <div class="input-group">
+                                <label>Linfonodos Comprometidos</label>
+                                <input type="number" id="esvaziamentoComprometidos" inputmode="numeric">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Reconstrução Imediata -->
+                <h3>🏗️ Reconstrução Imediata</h3>
+                <div class="switch-group" id="reconstrucaoSwitch">
+                    <div class="switch-option selected" data-value="nao">Não</div>
+                    <div class="switch-option" data-value="sim">Sim</div>
+                </div>
+                <div class="conditional-field" id="reconstrucaoDetalhe">
+                    <h4>Tipos de Reconstrução</h4>
+                    <div class="checkbox-group" id="reconstrucaoTipos">
+                        <div class="checkbox-chip" data-value="Expansor">Expansor</div>
+                        <div class="checkbox-chip" data-value="Prótese">Prótese</div>
+                        <div class="checkbox-chip" data-value="Mamoplastia">Mamoplastia</div>
+                        <div class="checkbox-chip" data-value="Simetrização">Simetrização</div>
+                        <div class="checkbox-chip" data-value="GD">GD</div>
+                        <div class="checkbox-chip" data-value="TRAM">TRAM</div>
+                    </div>
+                    <div class="input-group" style="margin-top: 15px;">
+                        <label>Observações da Cirurgia</label>
+                        <textarea id="obsCirurgia" rows="3" placeholder="Observações adicionais sobre a cirurgia..."></textarea>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+
+        <!-- PASSO 5: Anatomo, Imuno, Rádio e Fitzpatrick -->
+        <div class="step" id="step5">
+            <div class="card">
+                <h2>🔬 Anátomo Patológico</h2>
+                
+                <h3>Tipo Histológico</h3>
+                <div class="checkbox-group" id="tipoHistologico">
+                    <div class="checkbox-chip" data-value="CINE">CINE (Carcinoma Invasivo Não Especial)</div>
+                    <div class="checkbox-chip" data-value="CLI">CLI (Carcinoma Lobular Invasivo)</div>
+                    <div class="checkbox-chip" data-value="Carcinoma Intraductal in situ">Carcinoma Intraductal in situ</div>
+                    <div class="checkbox-chip" data-value="Carcinoma Lobular in situ">Carcinoma Lobular in situ</div>
+                    <div class="checkbox-chip" data-value="Outros">Outros</div>
+                </div>
+                <div class="conditional-field" id="outroHistologicoField">
+                    <label>Especifique:</label>
+                    <input type="text" id="outroHistologico" placeholder="Tipo histológico...">
+                </div>
+                <div class="input-group">
+                    <label>Observações</label>
+                    <textarea id="obsHistologico" rows="2" placeholder="Observações adicionais..."></textarea>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>🧬 Imunohistoquímica</h2>
+                
+                <div class="input-group">
+                    <label>Receptor de Estrogênio</label>
+                    <div class="switch-group" id="reSwitch">
+                        <div class="switch-option selected" data-value="Positivo">Positivo</div>
+                        <div class="switch-option" data-value="Negativo">Negativo</div>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label>Receptor de Progesterona</label>
+                    <div class="switch-group" id="rpSwitch">
+                        <div class="switch-option selected" data-value="Positivo">Positivo</div>
+                        <div class="switch-option" data-value="Negativo">Negativo</div>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label>HER 2</label>
+                    <div class="switch-group" id="her2Switch">
+                        <div class="switch-option selected" data-value="Positivo">Positivo</div>
+                        <div class="switch-option" data-value="Negativo">Negativo</div>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label>Ki67 (%)</label>
+                    <input type="number" id="ki67" min="0" max="100" placeholder="Ex: 30" inputmode="numeric">
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>☢️ Radioterapia</h2>
+                
+                <div class="input-group">
+                    <label>Dose Total (Gy)</label>
+                    <input type="number" id="doseRt" step="0.1" placeholder="Ex: 50" inputmode="decimal">
+                </div>
+                <div class="input-group">
+                    <label>Data de Início</label>
+                    <input type="text" id="dataInicioRt" placeholder="DD/MM/AAAA" inputmode="numeric" maxlength="10">
+                </div>
+                <div class="input-group">
+                    <label>Data Final</label>
+                    <input type="text" id="dataFimRt" placeholder="DD/MM/AAAA" inputmode="numeric" maxlength="10">
+                </div>
+                <div class="input-group">
+                    <label>Número de Frações</label>
+                    <input type="number" id="numeroFracoes" placeholder="Ex: 25" inputmode="numeric">
+                </div>
+                <div class="input-group">
+                    <label>Frequência Semanal (frações)</label>
+                    <input type="number" id="frequenciaRt" placeholder="Ex: 5" inputmode="numeric">
+                </div>
+                <div class="input-group">
+                    <label>Dose por Fração (Gy)</label>
+                    <input type="number" id="dosePorFracao" step="0.1" placeholder="Ex: 2.0" inputmode="decimal">
+                </div>
+                <div class="input-group">
+                    <label>Boost</label>
+                    <input type="text" id="boostRt" placeholder="Descreva o boost...">
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>🎨 Fotobiotipo da Pele (Fitzpatrick)</h2>
+                
+                <img src="https://blog.vivianlopesdermato.com.br/wp-content/uploads/2024/10/Group-11.png" 
+                     alt="Escala Fitzpatrick" 
+                     class="fitzpatrick-img"
+                     onerror="this.src='https://placehold.co/600x300/E0E6ED/5D6D7E?text=Escala+Fitzpatrick'">
+                
+                <div class="checkbox-group" id="fitzpatrick">
+                    <div class="checkbox-chip" data-value="1">Tipo 1</div>
+                    <div class="checkbox-chip" data-value="2">Tipo 2</div>
+                    <div class="checkbox-chip" data-value="3">Tipo 3</div>
+                    <div class="checkbox-chip" data-value="4">Tipo 4</div>
+                    <div class="checkbox-chip" data-value="5">Tipo 5</div>
+                    <div class="checkbox-chip" data-value="6">Tipo 6</div>
+                </div>
+            </div>
+            
+            <button class="btn btn-primary" onclick="finalizarCadastro()" style="width: 100%; margin-top: 20px;">✅ Finalizar Cadastro</button>
+        </div>
+
+        <div class="button-group" id="navigationButtons">
+            <button class="btn btn-secondary" onclick="cadastroPassoAnterior()" id="btnAnterior">Anterior</button>
+            <button class="btn btn-primary" onclick="cadastroProximoPasso()" id="btnProximo">Próximo →</button>
+        </div>
+        
+        <div class="footer-message">
+            <span>❤️</span><br>
+            Nunca desista, lembre-se que te amamos e estamos com você até o fim! 
+            <span>❤️</span>
+        </div>
+    </div>
+
+    <!-- ============================================= -->
+    <!-- TELA DE AVALIAÇÃO (CRIAÇÃO/EDIÇÃO)             -->
+    <!-- ============================================= -->
+    <div class="screen" id="avaliacaoScreen">
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 id="avaliacaoTitulo">Nova Avaliação</h2>
+                <span style="background: #6C5CE7; color: white; padding: 6px 12px; border-radius: 20px; font-size: 14px;" id="avaliacaoNumero">Avaliação #1</span>
+            </div>
+            
+            <p style="color: #7F8C8D; margin-bottom: 20px;" id="avaliacaoPacienteNome"></p>
+            
+            <div class="input-group">
+                <label>Data da Avaliação *</label>
+                <input type="text" id="dataAvaliacao" placeholder="DD/MM/AAAA" inputmode="numeric" maxlength="10">
+            </div>
+        </div>
+        
+        <div class="card">
+            <h3>📊 Radiodermite (RTOG)</h3>
+            <div class="legend">grau 0 - sem alterações, grau 1 - eritema leve, grau 2 - descamação seca, grau 3 - grau úmido de descamação e grau 4 - necrose</div>
+            
+            <div class="switch-group" id="rtoSwitch">
+                <div class="switch-option" data-value="0">Grau 0</div>
+                <div class="switch-option" data-value="1">Grau 1</div>
+                <div class="switch-option" data-value="2">Grau 2</div>
+                <div class="switch-option" data-value="3">Grau 3</div>
+                <div class="switch-option" data-value="4">Grau 4</div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h3>😣 Dor - Escala Visual Analógica (EVA)</h3>
+            <div class="input-group">
+                <label>Nível de Dor (0-10) *</label>
+                <input type="number" id="eva" min="0" max="10" placeholder="0 a 10" inputmode="numeric" required>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h3>📐 Goniometria (Amplitude de Movimento)</h3>
+            
+            <div class="goniometria-grid">
+                <div class="goniometria-header">Movimento</div>
+                <div class="goniometria-header">Direita</div>
+                <div class="goniometria-header">Esquerda</div>
+            </div>
+            
+            <div class="goniometria-grid">
+                <span>Flexão</span>
+                <input type="number" id="flexaoDir" placeholder="°" inputmode="decimal">
+                <input type="number" id="flexaoEsq" placeholder="°" inputmode="decimal">
+            </div>
+            <div class="goniometria-grid">
+                <span>Extensão</span>
+                <input type="number" id="extensaoDir" placeholder="°" inputmode="decimal">
+                <input type="number" id="extensaoEsq" placeholder="°" inputmode="decimal">
+            </div>
+            <div class="goniometria-grid">
+                <span>Adução</span>
+                <input type="number" id="aducaoDir" placeholder="°" inputmode="decimal">
+                <input type="number" id="aducaoEsq" placeholder="°" inputmode="decimal">
+            </div>
+            <div class="goniometria-grid">
+                <span>Abdução</span>
+                <input type="number" id="abducaoDir" placeholder="°" inputmode="decimal">
+                <input type="number" id="abducaoEsq" placeholder="°" inputmode="decimal">
+            </div>
+            <div class="goniometria-grid">
+                <span>Rotação Interna</span>
+                <input type="number" id="riDir" placeholder="°" inputmode="decimal">
+                <input type="number" id="riEsq" placeholder="°" inputmode="decimal">
+            </div>
+            <div class="goniometria-grid">
+                <span>Rotação Externa</span>
+                <input type="number" id="reDir" placeholder="°" inputmode="decimal">
+                <input type="number" id="reEsq" placeholder="°" inputmode="decimal">
+            </div>
+        </div>
+        
+        <div class="card">
+            <h3>🖐️ Sensibilidade (Estesiômetro)</h3>
+            
+            <div class="input-group">
+                <label>Mama</label>
+                <input type="text" id="sensMama" placeholder="Cor do monofilamento">
+            </div>
+            <div class="input-group">
+                <label>Axila</label>
+                <input type="text" id="sensAxila" placeholder="Cor do monofilamento">
+            </div>
+            <div class="input-group">
+                <label>Braço</label>
+                <input type="text" id="sensBraco" placeholder="Cor do monofilamento">
+            </div>
+        </div>
+        
+        <div class="card">
+            <h3>💪 Função dos Membros Superiores (DASH)</h3>
+            <div class="input-group">
+                <label>Escore DASH</label>
+                <input type="number" id="dash" step="0.1" placeholder="Opcional" inputmode="decimal">
+            </div>
+        </div>
+        
+        <div class="card">
+            <h3>📏 Tamanho da Mama</h3>
+            <div class="input-group">
+                <label>Tamanho (cm)</label>
+                <input type="number" id="tamanhoMama" step="0.1" placeholder="Em centímetros" inputmode="decimal">
+            </div>
+        </div>
+        
+        <div class="card">
+            <h3>📋 Grau de Ptose Mamária (Oliveira)</h3>
+            <select id="ptose" style="width: 100%;">
+                <option value="">Selecione...</option>
+                <option value="1">Grau 1</option>
+                <option value="2">Grau 2</option>
+                <option value="3">Grau 3</option>
+                <option value="4">Grau 4</option>
+                <option value="Mastectomia">Mastectomia</option>
+            </select>
+        </div>
+        
+        <div class="card">
+            <h3>💡 Desconforto com Fotobiomodulação</h3>
+            <textarea id="desconforto" rows="2" placeholder="Descreva qualquer desconforto..."></textarea>
+        </div>
+        
+        <div class="card">
+            <h3>✅ Adesão ao Tratamento</h3>
+            <div class="switch-group" id="adesaoSwitch">
+                <div class="switch-option selected" data-value="sim">Sim</div>
+                <div class="switch-option" data-value="nao">Não</div>
+            </div>
+            <div class="conditional-field" id="motivoNaoAdesaoField">
+                <label>Motivo da Não Adesão</label>
+                <textarea id="motivoNaoAdesao" rows="2" placeholder="Descreva o motivo..."></textarea>
+            </div>
+        </div>
+        
+        <div class="button-group">
+            <button class="btn btn-secondary" onclick="cancelarEdicaoAvaliacao()">Cancelar</button>
+            <button class="btn btn-success" onclick="salvarAvaliacao()" id="btnSalvarAvaliacao">💾 Salvar Avaliação</button>
+        </div>
+        
+        <div class="footer-message">
+            <span>❤️</span><br>
+            Nunca desista, lembre-se que te amamos e estamos com você até o fim! 
+            <span>❤️</span>
+        </div>
+    </div>
+
+    <!-- ============================================= -->
+    <!-- TELA DE HISTÓRICO                              -->
+    <!-- ============================================= -->
+    <div class="screen" id="historicoScreen">
+        <div class="card">
+            <h2 id="historicoPacienteNome">Histórico</h2>
+            <p style="color: #7F8C8D; margin-bottom: 20px;" id="historicoPacienteInfo"></p>
+            
+            <div class="timeline" id="timelineContainer"></div>
+        </div>
+        
+        <button class="fab" onclick="iniciarNovaAvaliacao()">➕</button>
+        
+        <div class="footer-message">
+            <span>❤️</span><br>
+            Nunca desista, lembre-se que te amamos e estamos com você até o fim! 
+            <span>❤️</span>
+        </div>
+    </div>
+
+    <!-- Modal de Detalhes da Avaliação -->
+    <div class="modal" id="detalhesModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="modalTitulo">Detalhes da Avaliação</div>
+                <button class="modal-close" onclick="fecharModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody"></div>
+        </div>
+    </div>
+
+    <!-- Modal para a imagem "Alegrar o meu dia" -->
+    <div class="modal" id="alegrarModal">
+        <div class="modal-image-content">
+            <button class="modal-close-white" onclick="fecharModalAlegrar()">&times;</button>
+            <img src="https://scontent-gru1-2.xx.fbcdn.net/v/t39.30808-6/556874907_24863663943273404_4300834243976665155_n.jpg?_nc_cat=103&ccb=1-7&_nc_sid=13d280&_nc_eui2=AeEhu92wdelglO5hn4_LfPz6CQuTKyzdCVsJC5MrLN0JWxHQtQRR1sR2ICSVCPEXyHQ_-kYcQk2CWz6A73jVdoqf&_nc_ohc=DJh-BjuQB3MQ7kNvwF5jjPu&_nc_oc=AdpdwEtIe5ZdHGRQKNOenKBLjO_ic-P49UYmaxXMfXb7gySIvsAVPByiK2srJSpQCGg&_nc_zt=23&_nc_ht=scontent-gru1-2.xx&_nc_gid=5gN1J6gUFufKo9E2HRE4sg&_nc_ss=7a3a8&oh=00_Af1lVzyeSc-S7vP9adSOwzIdUwOFmY8B0KWzsJg2Lgf0gA&oe=69E08FEE" 
+                 alt="Alegrar o dia" 
+                 onerror="this.src='https://placehold.co/600x400/FF6B6B/FFFFFF?text=Alegrar+o+meu+dia'">
+        </div>
+    </div>
+    
+    <!-- Banner de Instalação PWA -->
+    <div id="installBanner" class="install-banner" style="display: none;">
+        <div class="install-banner-content">
+            <div class="install-banner-icon">📱</div>
+            <div class="install-banner-text">
+                <div class="install-banner-title">Instalar App</div>
+                <div class="install-banner-subtitle">Adicione à tela inicial para acesso rápido e offline</div>
+            </div>
+            <button class="install-banner-btn" onclick="instalarApp()">Instalar</button>
+            <button class="install-banner-close" onclick="fecharBannerInstalacao()">✕</button>
+        </div>
+    </div>
+
+    <script>
+        // =============================================
+        // VARIÁVEIS GLOBAIS
+        // =============================================
+        let pacienteAtual = null;
+        let cadastroPassoAtual = 1;
+        const totalPassos = 5;
+        let modoEdicao = false;
+        let avaliacaoEmEdicao = null; // Chave da avaliação sendo editada
+        
+        // =============================================
+        // PWA - Banner de Instalação
+        // =============================================
+        let deferredPrompt;
+        
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            document.getElementById('installBanner').style.display = 'block';
+        });
+        
+        window.addEventListener('appinstalled', () => {
+            console.log('✅ App instalado com sucesso!');
+            document.getElementById('installBanner').style.display = 'none';
+            deferredPrompt = null;
+        });
+        
+        function instalarApp() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('✅ Usuário aceitou a instalação');
+                    }
+                    deferredPrompt = null;
+                    document.getElementById('installBanner').style.display = 'none';
+                });
+            }
+        }
+        
+        function fecharBannerInstalacao() {
+            document.getElementById('installBanner').style.display = 'none';
+        }
+        
+        // =============================================
+        // INICIALIZAÇÃO DO LOCALSTORAGE
+        // =============================================
+        if (!localStorage.getItem('pacientes')) {
+            localStorage.setItem('pacientes', JSON.stringify({}));
+        }
+        
+        // =============================================
+        // FUNÇÃO ALEGRAR O MEU DIA
+        // =============================================
+        function alegrarMeuDia() {
+            document.getElementById('alegrarModal').classList.add('active');
+        }
+        
+        function fecharModalAlegrar() {
+            document.getElementById('alegrarModal').classList.remove('active');
+        }
+        
+        // =============================================
+        // EXPORTAÇÃO PARA EXCEL
+        // =============================================
+        function exportarParaExcel() {
+            const pacientes = JSON.parse(localStorage.getItem('pacientes') || '{}');
+            const listaPacientes = Object.values(pacientes);
+            
+            if (listaPacientes.length === 0) {
+                alert('Não há pacientes cadastrados para exportar.');
+                return;
+            }
+            
+            const wb = XLSX.utils.book_new();
+            
+            listaPacientes.forEach(paciente => {
+                const dadosPlanilha = [];
+                
+                // Dados Cadastrais
+                dadosPlanilha.push(['DADOS CADASTRAIS', '']);
+                dadosPlanilha.push(['Nome', paciente.nome || '']);
+                dadosPlanilha.push(['Registro Hospitalar', paciente.registro || '']);
+                dadosPlanilha.push(['Data de Nascimento', paciente.nascimento || '']);
+                dadosPlanilha.push(['Idade', paciente.idade || '']);
+                dadosPlanilha.push(['Estado Civil', paciente.estadoCivil || '']);
+                dadosPlanilha.push(['Endereço', paciente.endereco || '']);
+                dadosPlanilha.push(['Telefone', paciente.telefone || '']);
+                dadosPlanilha.push(['Telefone Recado', paciente.telefoneRecado || '']);
+                dadosPlanilha.push(['Profissão', paciente.profissao || '']);
+                dadosPlanilha.push(['Peso (kg)', paciente.peso || '']);
+                dadosPlanilha.push(['Altura (m)', paciente.altura || '']);
+                dadosPlanilha.push(['Escolaridade', paciente.escolaridade || '']);
+                dadosPlanilha.push(['Raça', paciente.raca || '']);
+                dadosPlanilha.push(['Dominância', paciente.dominancia || '']);
+                dadosPlanilha.push(['']);
+                
+                // Antecedentes
+                dadosPlanilha.push(['ANTECEDENTES', '']);
+                dadosPlanilha.push(['Cirurgia Prévia', paciente.cirurgiaPrevia || '']);
+                dadosPlanilha.push(['Descrição Cirurgia Prévia', paciente.cirurgiaPreviaTexto || '']);
+                dadosPlanilha.push(['Doenças Associadas', Array.isArray(paciente.doencasAssociadas) ? paciente.doencasAssociadas.join(', ') : '']);
+                dadosPlanilha.push(['Outras Doenças', paciente.outrasDoencas || '']);
+                dadosPlanilha.push(['Antecedentes Ortopédicos', Array.isArray(paciente.antecedentesOrtopedicos) ? paciente.antecedentesOrtopedicos.join(', ') : '']);
+                dadosPlanilha.push(['Tabagismo', paciente.tabagismo || '']);
+                dadosPlanilha.push(['Cigarros por dia', paciente.cigarrosDia || '']);
+                dadosPlanilha.push(['Anos fumando', paciente.anosFumando || '']);
+                dadosPlanilha.push(['']);
+                
+                // História Ginecológica
+                dadosPlanilha.push(['HISTÓRIA GINECOLÓGICA', '']);
+                dadosPlanilha.push(['Menopausa', paciente.menopausa || '']);
+                dadosPlanilha.push(['Uso de Anticoncepcional', paciente.anticoncepcional || '']);
+                dadosPlanilha.push(['Tempo de Anticoncepcional', paciente.tempoAnticoncepcional || '']);
+                dadosPlanilha.push(['Medicamentos', paciente.medicamentos || '']);
+                dadosPlanilha.push(['']);
+                
+                // Cirurgia Atual
+                dadosPlanilha.push(['CIRURGIA ATUAL', '']);
+                dadosPlanilha.push(['Data da Cirurgia', paciente.dataCirurgia || '']);
+                dadosPlanilha.push(['Lado da Mama', Array.isArray(paciente.ladoMama) ? paciente.ladoMama.join(', ') : '']);
+                dadosPlanilha.push(['Tipo de Cirurgia', Array.isArray(paciente.tipoCirurgia) ? paciente.tipoCirurgia.join(', ') : '']);
+                dadosPlanilha.push(['BLS Realizado', paciente.blsFeito || '']);
+                dadosPlanilha.push(['BLS Resultado', paciente.blsResultado || '']);
+                dadosPlanilha.push(['BLS Linfonodos Retirados', paciente.blsRetirados || '']);
+                dadosPlanilha.push(['BLS Linfonodos Comprometidos', paciente.blsComprometidos || '']);
+                dadosPlanilha.push(['Esvaziamento Axilar', paciente.esvaziamentoFeito || '']);
+                dadosPlanilha.push(['Esvaziamento Resultado', paciente.esvaziamentoResultado || '']);
+                dadosPlanilha.push(['Esvaziamento Retirados', paciente.esvaziamentoRetirados || '']);
+                dadosPlanilha.push(['Esvaziamento Comprometidos', paciente.esvaziamentoComprometidos || '']);
+                dadosPlanilha.push(['Reconstrução Imediata', paciente.reconstrucaoImediata || '']);
+                dadosPlanilha.push(['Tipos de Reconstrução', Array.isArray(paciente.reconstrucaoTipos) ? paciente.reconstrucaoTipos.join(', ') : '']);
+                dadosPlanilha.push(['Observações da Cirurgia', paciente.obsCirurgia || '']);
+                dadosPlanilha.push(['']);
+                
+                // Anatomo Patológico
+                dadosPlanilha.push(['ANATOMO PATOLÓGICO', '']);
+                dadosPlanilha.push(['Tipo Histológico', Array.isArray(paciente.tipoHistologico) ? paciente.tipoHistologico.join(', ') : '']);
+                dadosPlanilha.push(['Outro Histológico', paciente.outroHistologico || '']);
+                dadosPlanilha.push(['Observações', paciente.obsHistologico || '']);
+                dadosPlanilha.push(['']);
+                
+                // Imunohistoquímica
+                dadosPlanilha.push(['IMUNOHISTOQUÍMICA', '']);
+                dadosPlanilha.push(['Receptor de Estrogênio', paciente.re || '']);
+                dadosPlanilha.push(['Receptor de Progesterona', paciente.rp || '']);
+                dadosPlanilha.push(['HER 2', paciente.her2 || '']);
+                dadosPlanilha.push(['Ki67', paciente.ki67 ? paciente.ki67 + '%' : '']);
+                dadosPlanilha.push(['']);
+                
+                // Radioterapia
+                dadosPlanilha.push(['RADIOTERAPIA', '']);
+                dadosPlanilha.push(['Dose Total', paciente.doseRt || '']);
+                dadosPlanilha.push(['Data Início', paciente.dataInicioRt || '']);
+                dadosPlanilha.push(['Data Fim', paciente.dataFimRt || '']);
+                dadosPlanilha.push(['Número de Frações', paciente.numeroFracoes || '']);
+                dadosPlanilha.push(['Frequência Semanal', paciente.frequenciaRt || '']);
+                dadosPlanilha.push(['Dose por Fração', paciente.dosePorFracao || '']);
+                dadosPlanilha.push(['Boost', paciente.boostRt || '']);
+                dadosPlanilha.push(['']);
+                
+                // Fitzpatrick
+                dadosPlanilha.push(['FOTOTIPO', '']);
+                dadosPlanilha.push(['Fitzpatrick', paciente.fitzpatrick ? 'Tipo ' + paciente.fitzpatrick : '']);
+                dadosPlanilha.push(['']);
+                dadosPlanilha.push(['']);
+                
+                // Avaliações
+                dadosPlanilha.push(['===== AVALIAÇÕES =====', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']);
+                
+                const avaliacoes = paciente.avaliacoes || {};
+                const avaliacoesArray = Object.entries(avaliacoes)
+                    .sort((a, b) => {
+                        const dataA = a[1].data.split('/').reverse().join('-');
+                        const dataB = b[1].data.split('/').reverse().join('-');
+                        return new Date(dataA) - new Date(dataB);
+                    });
+                
+                if (avaliacoesArray.length > 0) {
+                    dadosPlanilha.push([
+                        'Data', 'RTOG', 'EVA', 
+                        'Flexão D', 'Flexão E', 'Extensão D', 'Extensão E',
+                        'Adução D', 'Adução E', 'Abdução D', 'Abdução E',
+                        'RI D', 'RI E', 'RE D', 'RE E',
+                        'Sens. Mama', 'Sens. Axila', 'Sens. Braço',
+                        'DASH', 'Tamanho Mama', 'Ptose', 'Desconforto', 'Adesão', 'Motivo Não Adesão'
+                    ]);
+                    
+                    avaliacoesArray.forEach(([key, aval]) => {
+                        dadosPlanilha.push([
+                            aval.data || '',
+                            aval.rto || '',
+                            aval.eva || '',
+                            aval.goniometria?.dir?.flexao || '',
+                            aval.goniometria?.esq?.flexao || '',
+                            aval.goniometria?.dir?.extensao || '',
+                            aval.goniometria?.esq?.extensao || '',
+                            aval.goniometria?.dir?.aducao || '',
+                            aval.goniometria?.esq?.aducao || '',
+                            aval.goniometria?.dir?.abducao || '',
+                            aval.goniometria?.esq?.abducao || '',
+                            aval.goniometria?.dir?.ri || '',
+                            aval.goniometria?.esq?.ri || '',
+                            aval.goniometria?.dir?.re || '',
+                            aval.goniometria?.esq?.re || '',
+                            aval.sensibilidade?.mama || '',
+                            aval.sensibilidade?.axila || '',
+                            aval.sensibilidade?.braco || '',
+                            aval.dash || '',
+                            aval.tamanhoMama || '',
+                            aval.ptose || '',
+                            aval.desconforto || '',
+                            aval.adesao === 'sim' ? 'Sim' : 'Não',
+                            aval.motivoNaoAdesao || ''
+                        ]);
+                    });
+                }
+                
+                const ws = XLSX.utils.aoa_to_sheet(dadosPlanilha);
+                const colWidths = [{ wch: 30 }, { wch: 40 }];
+                ws['!cols'] = colWidths;
+                
+                let nomeAba = (paciente.nome || paciente.registro || 'Paciente')
+                    .substring(0, 28)
+                    .replace(/[\[\]\*\?\/\\\\:]/g, '_');
+                
+                XLSX.utils.book_append_sheet(wb, ws, nomeAba);
+            });
+            
+            // Aba de Resumo
+            const resumoData = [['RESUMO GERAL', '', '', '', '']];
+            resumoData.push(['Registro', 'Nome', 'Idade', 'Total Avaliações', 'Última Avaliação']);
+            
+            listaPacientes.forEach(p => {
+                const numAval = Object.keys(p.avaliacoes || {}).length;
+                let ultimaData = '-';
+                
+                Object.values(p.avaliacoes || {}).forEach(aval => {
+                    if (aval.data) ultimaData = aval.data;
+                });
+                
+                resumoData.push([
+                    p.registro || '',
+                    p.nome || '',
+                    p.idade || '',
+                    numAval,
+                    ultimaData
+                ]);
+            });
+            
+            const wsResumo = XLSX.utils.aoa_to_sheet(resumoData);
+            XLSX.utils.book_append_sheet(wb, wsResumo, 'RESUMO');
+            
+            const dataAtual = new Date();
+            const nomeArquivo = `Doutorado_${dataAtual.getDate()}-${dataAtual.getMonth()+1}-${dataAtual.getFullYear()}.xlsx`;
+            
+            XLSX.writeFile(wb, nomeArquivo);
+        }
+        
+        function exportarPacienteUnica() {
+            if (!pacienteAtual) {
+                alert('Nenhuma paciente selecionada.');
+                return;
+            }
+            
+            const pacientes = JSON.parse(localStorage.getItem('pacientes') || '{}');
+            const paciente = pacientes[pacienteAtual.registro];
+            
+            if (!paciente) return;
+            
+            const backup = localStorage.getItem('pacientes');
+            const tempData = {};
+            tempData[paciente.registro] = paciente;
+            localStorage.setItem('pacientes', JSON.stringify(tempData));
+            
+            exportarParaExcel();
+            
+            localStorage.setItem('pacientes', backup);
+        }
+        
+        // =============================================
+        // NAVEGAÇÃO ENTRE TELAS
+        // =============================================
+        function mostrarTela(telaId, titulo) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(telaId).classList.add('active');
+            document.getElementById('screenTitle').textContent = titulo;
+            
+            if (telaId === 'homeScreen') {
+                atualizarResumoHome();
+            }
+        }
+        
+        function irParaHome() {
+            mostrarTela('homeScreen', 'Início');
+            pacienteAtual = null;
+            avaliacaoEmEdicao = null;
+        }
+        
+        function mostrarNovaPaciente() {
+            modoEdicao = false;
+            pacienteAtual = null;
+            avaliacaoEmEdicao = null;
+            limparFormularioCadastro();
+            cadastroPassoAtual = 1;
+            atualizarInterfaceCadastro();
+            mostrarTela('cadastroScreen', 'Nova Paciente');
+        }
+        
+        function mostrarBuscaPaciente() {
+            mostrarTela('buscaScreen', 'Buscar Paciente');
+            document.getElementById('buscaInput').value = '';
+            buscarPacientes();
+        }
+        
+        function mostrarAcoesPaciente(registro) {
+            const pacientes = JSON.parse(localStorage.getItem('pacientes') || '{}');
+            pacienteAtual = pacientes[registro];
+            
+            if (!pacienteAtual) return;
+            
+            document.getElementById('pacienteSelecionadoNome').textContent = pacienteAtual.nome;
+            
+            const avaliacoes = pacienteAtual.avaliacoes || {};
+            const numAvaliacoes = Object.keys(avaliacoes).length;
+            const proximaAval = numAvaliacoes + 1;
+            
+            document.getElementById('pacienteSelecionadoInfo').textContent = 
+                `Registro: ${registro} | ${numAvaliacoes} avaliação${numAvaliacoes !== 1 ? 'es' : ''}`;
+            
+            document.getElementById('proximaAvaliacaoTexto').textContent = 
+                numAvaliacoes === 0 ? 'Primeira avaliação' : `${proximaAval}ª avaliação`;
+            
+            mostrarTela('acoesPacienteScreen', pacienteAtual.nome.split(' ')[0]);
+        }
+        
+        function mostrarHistorico() {
+            if (!pacienteAtual) return;
+            
+            document.getElementById('historicoPacienteNome').textContent = pacienteAtual.nome;
+            
+            const avaliacoes = pacienteAtual.avaliacoes || {};
+            const numAvaliacoes = Object.keys(avaliacoes).length;
+            
+            document.getElementById('historicoPacienteInfo').textContent = 
+                `Registro: ${pacienteAtual.registro} | ${numAvaliacoes} avaliação${numAvaliacoes !== 1 ? 'es' : ''}`;
+            
+            preencherTimeline();
+            mostrarTela('historicoScreen', 'Histórico');
+        }
+        
+        function editarCadastro() {
+            if (!pacienteAtual) return;
+            
+            modoEdicao = true;
+            preencherFormularioEdicao();
+            cadastroPassoAtual = 1;
+            atualizarInterfaceCadastro();
+            mostrarTela('cadastroScreen', 'Editar Cadastro');
+        }
+        
+        function mostrarListaEditarAvaliacao() {
+            if (!pacienteAtual) return;
+            
+            const avaliacoes = pacienteAtual.avaliacoes || {};
+            const numAvaliacoes = Object.keys(avaliacoes).length;
+            
+            document.getElementById('listaAvaliacoesPacienteInfo').textContent = 
+                `${pacienteAtual.nome} | Registro: ${pacienteAtual.registro} | ${numAvaliacoes} avaliação${numAvaliacoes !== 1 ? 'es' : ''}`;
+            
+            preencherListaAvaliacoes();
+            mostrarTela('listaAvaliacoesScreen', 'Editar Avaliação');
+        }
+        
+        function preencherListaAvaliacoes() {
+            if (!pacienteAtual) return;
+            
+            const avaliacoes = pacienteAtual.avaliacoes || {};
+            const container = document.getElementById('avaliacaoListContainer');
+            
+            const avaliacoesArray = Object.entries(avaliacoes)
+                .sort((a, b) => {
+                    const dataA = a[1].data.split('/').reverse().join('-');
+                    const dataB = b[1].data.split('/').reverse().join('-');
+                    return new Date(dataB) - new Date(dataA);
+                });
+            
+            if (avaliacoesArray.length === 0) {
+                container.innerHTML = '<div class="no-results">Nenhuma avaliação registrada para editar</div>';
+                return;
+            }
+            
+            container.innerHTML = avaliacoesArray.map(([key, aval], index) => `
+                <div class="avaliacao-item" onclick="editarAvaliacaoSelecionada('${key}')">
+                    <div class="avaliacao-item-info">
+                        <div class="avaliacao-item-data">${aval.data} - Avaliação #${avaliacoesArray.length - index}</div>
+                        <div class="avaliacao-item-detalhes">
+                            RTOG: Grau ${aval.rto || '-'} | EVA: ${aval.eva || '-'}/10 | DASH: ${aval.dash || '-'}
+                        </div>
+                    </div>
+                    <span style="font-size: 24px;">✏️</span>
+                </div>
+            `).join('');
+        }
+        
+        function editarAvaliacaoSelecionada(chaveAvaliacao) {
+            if (!pacienteAtual || !pacienteAtual.avaliacoes) return;
+            
+            const avaliacao = pacienteAtual.avaliacoes[chaveAvaliacao];
+            if (!avaliacao) return;
+            
+            avaliacaoEmEdicao = chaveAvaliacao;
+            
+            document.getElementById('avaliacaoTitulo').textContent = 'Editar Avaliação';
+            document.getElementById('avaliacaoPacienteNome').textContent = 
+                `${pacienteAtual.nome} (Registro: ${pacienteAtual.registro})`;
+            
+            const avaliacoes = pacienteAtual.avaliacoes || {};
+            const avaliacoesArray = Object.entries(avaliacoes)
+                .sort((a, b) => {
+                    const dataA = a[1].data.split('/').reverse().join('-');
+                    const dataB = b[1].data.split('/').reverse().join('-');
+                    return new Date(dataA) - new Date(dataB);
+                });
+            
+            const index = avaliacoesArray.findIndex(([key]) => key === chaveAvaliacao);
+            document.getElementById('avaliacaoNumero').textContent = `Avaliação #${avaliacoesArray.length - index}`;
+            
+            // Preencher formulário com dados da avaliação
+            document.getElementById('dataAvaliacao').value = avaliacao.data || '';
+            
+            // RTOG
+            selecionarSwitch('rtoSwitch', avaliacao.rto);
+            
+            // EVA
+            document.getElementById('eva').value = avaliacao.eva || '';
+            
+            // Goniometria
+            if (avaliacao.goniometria) {
+                document.getElementById('flexaoDir').value = avaliacao.goniometria.dir?.flexao || '';
+                document.getElementById('flexaoEsq').value = avaliacao.goniometria.esq?.flexao || '';
+                document.getElementById('extensaoDir').value = avaliacao.goniometria.dir?.extensao || '';
+                document.getElementById('extensaoEsq').value = avaliacao.goniometria.esq?.extensao || '';
+                document.getElementById('aducaoDir').value = avaliacao.goniometria.dir?.aducao || '';
+                document.getElementById('aducaoEsq').value = avaliacao.goniometria.esq?.aducao || '';
+                document.getElementById('abducaoDir').value = avaliacao.goniometria.dir?.abducao || '';
+                document.getElementById('abducaoEsq').value = avaliacao.goniometria.esq?.abducao || '';
+                document.getElementById('riDir').value = avaliacao.goniometria.dir?.ri || '';
+                document.getElementById('riEsq').value = avaliacao.goniometria.esq?.ri || '';
+                document.getElementById('reDir').value = avaliacao.goniometria.dir?.re || '';
+                document.getElementById('reEsq').value = avaliacao.goniometria.esq?.re || '';
+            }
+            
+            // Sensibilidade
+            if (avaliacao.sensibilidade) {
+                document.getElementById('sensMama').value = avaliacao.sensibilidade.mama || '';
+                document.getElementById('sensAxila').value = avaliacao.sensibilidade.axila || '';
+                document.getElementById('sensBraco').value = avaliacao.sensibilidade.braco || '';
+            }
+            
+            // Outros campos
+            document.getElementById('dash').value = avaliacao.dash || '';
+            document.getElementById('tamanhoMama').value = avaliacao.tamanhoMama || '';
+            document.getElementById('ptose').value = avaliacao.ptose || '';
+            document.getElementById('desconforto').value = avaliacao.desconforto || '';
+            
+            // Adesão
+            selecionarSwitch('adesaoSwitch', avaliacao.adesao);
+            document.getElementById('motivoNaoAdesao').value = avaliacao.motivoNaoAdesao || '';
+            document.getElementById('motivoNaoAdesaoField').classList.toggle('show', avaliacao.adesao === 'nao');
+            
+            document.getElementById('btnSalvarAvaliacao').textContent = '💾 Atualizar Avaliação';
+            
+            mostrarTela('avaliacaoScreen', 'Editar Avaliação');
+        }
+        
+        function cancelarEdicaoAvaliacao() {
+            if (avaliacaoEmEdicao) {
+                if (confirm('Deseja cancelar a edição? As alterações não serão salvas.')) {
+                    avaliacaoEmEdicao = null;
+                    mostrarListaEditarAvaliacao();
+                }
+            } else {
+                if (confirm('Deseja cancelar esta avaliação?')) {
+                    irParaHome();
+                }
+            }
+        }
+        
+        function iniciarNovaAvaliacao() {
+            if (!pacienteAtual) return;
+            
+            avaliacaoEmEdicao = null;
+            
+            const avaliacoes = pacienteAtual.avaliacoes || {};
+            const numAvaliacoes = Object.keys(avaliacoes).length;
+            
+            document.getElementById('avaliacaoTitulo').textContent = 'Nova Avaliação';
+            document.getElementById('avaliacaoPacienteNome').textContent = 
+                `${pacienteAtual.nome} (Registro: ${pacienteAtual.registro})`;
+            document.getElementById('avaliacaoNumero').textContent = `Avaliação #${numAvaliacoes + 1}`;
+            
+            const hoje = new Date();
+            const dataFormatada = `${String(hoje.getDate()).padStart(2, '0')}/${String(hoje.getMonth() + 1).padStart(2, '0')}/${hoje.getFullYear()}`;
+            document.getElementById('dataAvaliacao').value = dataFormatada;
+            
+            limparFormularioAvaliacao();
+            document.getElementById('btnSalvarAvaliacao').textContent = '💾 Salvar Avaliação';
+            
+            mostrarTela('avaliacaoScreen', 'Nova Avaliação');
+        }
+        
+        // =============================================
+        // EXCLUSÃO DE PACIENTE
+        // =============================================
+        function excluirPaciente() {
+            if (!pacienteAtual) return;
+            
+            const confirmacao = confirm(
+                `⚠️ ATENÇÃO!\n\n` +
+                `Você está prestes a excluir PERMANENTEMENTE a paciente:\n\n` +
+                `Nome: ${pacienteAtual.nome}\n` +
+                `Registro: ${pacienteAtual.registro}\n` +
+                `Total de avaliações: ${Object.keys(pacienteAtual.avaliacoes || {}).length}\n\n` +
+                `Esta ação NÃO pode ser desfeita. Deseja continuar?`
+            );
+            
+            if (!confirmacao) return;
+            
+            const confirmacao2 = prompt(`Digite "SIM" em letras maiúsculas para confirmar a exclusão:`);
+            
+            if (confirmacao2 !== 'SIM') {
+                alert('Exclusão cancelada.');
+                return;
+            }
+            
+            const pacientes = JSON.parse(localStorage.getItem('pacientes') || '{}');
+            delete pacientes[pacienteAtual.registro];
+            localStorage.setItem('pacientes', JSON.stringify(pacientes));
+            
+            alert(`✅ Paciente ${pacienteAtual.nome} foi excluída do sistema.`);
+            
+            pacienteAtual = null;
+            irParaHome();
+        }
+        
+        // =============================================
+        // BUSCA DE PACIENTES
+        // =============================================
+        function buscarPacientes() {
+            const busca = document.getElementById('buscaInput').value.toLowerCase();
+            const pacientes = JSON.parse(localStorage.getItem('pacientes') || '{}');
+            const listaContainer = document.getElementById('pacienteList');
+            
+            const pacientesFiltrados = Object.values(pacientes).filter(p => 
+                (p.nome || '').toLowerCase().includes(busca) || 
+                (p.registro || '').toLowerCase().includes(busca)
+            );
+            
+            if (pacientesFiltrados.length === 0) {
+                listaContainer.innerHTML = '<div class="no-results">Nenhuma paciente encontrada</div>';
+                return;
+            }
+            
+            listaContainer.innerHTML = pacientesFiltrados.map(p => {
+                const avaliacoes = p.avaliacoes || {};
+                const numAvaliacoes = Object.keys(avaliacoes).length;
+                
+                return `
+                    <div class="paciente-item" onclick="mostrarAcoesPaciente('${p.registro}')">
+                        <div class="paciente-nome">${p.nome}</div>
+                        <div class="paciente-info">
+                            <span>📋 ${p.registro}</span>
+                            <span>📊 ${numAvaliacoes} avaliação${numAvaliacoes !== 1 ? 'es' : ''}</span>
+                            <span>🎂 ${p.idade || 'N/A'}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        // =============================================
+        // ATUALIZAR RESUMO DA HOME
+        // =============================================
+        function atualizarResumoHome() {
+            const pacientes = JSON.parse(localStorage.getItem('pacientes') || '{}');
+            const listaPacientes = Object.values(pacientes);
+            
+            let totalAvaliacoes = 0;
+            let ultimaData = null;
+            
+            listaPacientes.forEach(p => {
+                const avaliacoes = p.avaliacoes || {};
+                totalAvaliacoes += Object.keys(avaliacoes).length;
+                
+                Object.values(avaliacoes).forEach(aval => {
+                    if (!ultimaData || (aval.data && aval.data > ultimaData)) {
+                        ultimaData = aval.data;
+                    }
+                });
+            });
+            
+            document.getElementById('totalPacientes').textContent = listaPacientes.length;
+            document.getElementById('totalAvaliacoes').textContent = totalAvaliacoes;
+            document.getElementById('ultimaAvaliacao').textContent = ultimaData || '-';
+        }
+        
+        // =============================================
+        // CONTROLE DO CADASTRO
+        // =============================================
+        function atualizarInterfaceCadastro() {
+            const progresso = (cadastroPassoAtual / totalPassos) * 100;
+            document.getElementById('progressBar').style.width = progresso + '%';
+            document.getElementById('passoAtualTexto').textContent = `Passo ${cadastroPassoAtual}`;
+            
+            for (let i = 1; i <= totalPassos; i++) {
+                const step = document.getElementById(`step${i}`);
+                step.classList.toggle('active', i === cadastroPassoAtual);
+            }
+            
+            const navButtons = document.getElementById('navigationButtons');
+            const btnAnterior = document.getElementById('btnAnterior');
+            const btnProximo = document.getElementById('btnProximo');
+            const cadastroVoltar = document.getElementById('cadastroVoltar');
+            
+            if (cadastroPassoAtual === totalPassos) {
+                navButtons.style.display = 'none';
+            } else {
+                navButtons.style.display = 'flex';
+                btnAnterior.style.display = cadastroPassoAtual === 1 ? 'none' : 'block';
+                btnProximo.textContent = cadastroPassoAtual === totalPassos - 1 ? 'Finalizar' : 'Próximo →';
+            }
+            
+            if (cadastroVoltar) {
+                cadastroVoltar.textContent = cadastroPassoAtual === 1 ? '← Cancelar' : '← Voltar';
+            }
+        }
+        
+        function cadastroProximoPasso() {
+            if (validarPassoAtual()) {
+                if (cadastroPassoAtual < totalPassos) {
+                    cadastroPassoAtual++;
+                    atualizarInterfaceCadastro();
+                    window.scrollTo(0, 0);
+                }
+            }
+        }
+        
+        function cadastroPassoAnterior() {
+            if (cadastroPassoAtual > 1) {
+                cadastroPassoAtual--;
+                atualizarInterfaceCadastro();
+                window.scrollTo(0, 0);
+            } else {
+                if (confirm('Deseja cancelar o cadastro?')) {
+                    irParaHome();
+                }
+            }
+        }
+        
+        function validarPassoAtual() {
+            if (cadastroPassoAtual === 1) {
+                const nome = document.getElementById('nome').value.trim();
+                const registro = document.getElementById('registro').value.trim();
+                const nascimento = document.getElementById('nascimento').value.trim();
+                
+                if (!nome || !registro || nascimento.length !== 10) {
+                    alert('Preencha todos os campos obrigatórios!');
+                    return false;
+                }
+                
+                if (!modoEdicao) {
+                    const pacientes = JSON.parse(localStorage.getItem('pacientes') || '{}');
+                    if (pacientes[registro]) {
+                        alert('Este registro hospitalar já está cadastrado!');
+                        return false;
+                    }
+                }
+            }
+            
+            if (cadastroPassoAtual === 2) {
+                const telefone = document.getElementById('telefone').value.trim();
+                if (!telefone) {
+                    alert('O telefone é obrigatório!');
+                    return false;
+                }
+            }
+            
+            return true;
+        }
+        
+        function limparFormularioCadastro() {
+            document.getElementById('nome').value = '';
+            document.getElementById('registro').value = '';
+            document.getElementById('nascimento').value = '';
+            document.getElementById('idade').value = '';
+            document.getElementById('estadoCivil').value = '';
+            document.getElementById('endereco').value = '';
+            document.getElementById('telefone').value = '';
+            document.getElementById('telefoneRecado').value = '';
+            document.getElementById('profissao').value = '';
+            document.getElementById('peso').value = '';
+            document.getElementById('altura').value = '';
+            document.getElementById('escolaridade').value = '';
+            document.getElementById('raca').value = '';
+            document.getElementById('dominancia').value = '';
+            document.getElementById('obsCirurgia').value = '';
+            document.getElementById('numeroFracoes').value = '';
+            document.getElementById('dosePorFracao').value = '';
+            
+            document.querySelectorAll('.switch-option').forEach(opt => {
+                opt.classList.remove('selected');
+                if (opt.dataset.value === 'nao') {
+                    opt.classList.add('selected');
+                }
+            });
+            
+            document.querySelectorAll('.checkbox-chip').forEach(chip => {
+                chip.classList.remove('selected');
+            });
+            
+            document.querySelectorAll('.conditional-field').forEach(field => {
+                field.classList.remove('show');
+            });
+        }
+        
+        function preencherFormularioEdicao() {
+            if (!pacienteAtual) return;
+            
+            document.getElementById('nome').value = pacienteAtual.nome || '';
+            document.getElementById('registro').value = pacienteAtual.registro || '';
+            document.getElementById('nascimento').value = pacienteAtual.nascimento || '';
+            calcularIdade(pacienteAtual.nascimento);
+            document.getElementById('estadoCivil').value = pacienteAtual.estadoCivil || '';
+            document.getElementById('endereco').value = pacienteAtual.endereco || '';
+            document.getElementById('telefone').value = pacienteAtual.telefone || '';
+            document.getElementById('telefoneRecado').value = pacienteAtual.telefoneRecado || '';
+            document.getElementById('profissao').value = pacienteAtual.profissao || '';
+            document.getElementById('peso').value = pacienteAtual.peso || '';
+            document.getElementById('altura').value = pacienteAtual.altura || '';
+            document.getElementById('escolaridade').value = pacienteAtual.escolaridade || '';
+            document.getElementById('raca').value = pacienteAtual.raca || '';
+            document.getElementById('dominancia').value = pacienteAtual.dominancia || '';
+            document.getElementById('numeroFracoes').value = pacienteAtual.numeroFracoes || '';
+            document.getElementById('dosePorFracao').value = pacienteAtual.dosePorFracao || '';
+            
+            if (pacienteAtual.reconstrucaoImediata) {
+                selecionarSwitch('reconstrucaoSwitch', pacienteAtual.reconstrucaoImediata);
+            }
+            if (pacienteAtual.reconstrucaoTipos) {
+                selecionarChips('reconstrucaoTipos', pacienteAtual.reconstrucaoTipos);
+            }
+            document.getElementById('obsCirurgia').value = pacienteAtual.obsCirurgia || '';
+            
+            if (pacienteAtual.cirurgiaPrevia) {
+                selecionarSwitch('cirurgiaPreviaSwitch', pacienteAtual.cirurgiaPrevia);
+            }
+            if (pacienteAtual.tabagismo) {
+                selecionarSwitch('tabagismoSwitch', pacienteAtual.tabagismo);
+            }
+            if (pacienteAtual.menopausa) {
+                selecionarSwitch('menopausaSwitch', pacienteAtual.menopausa);
+            }
+            if (pacienteAtual.anticoncepcional) {
+                selecionarSwitch('anticoncepcionalSwitch', pacienteAtual.anticoncepcional);
+            }
+            if (pacienteAtual.blsFeito) {
+                selecionarSwitch('blsSwitch', pacienteAtual.blsFeito);
+            }
+            if (pacienteAtual.blsResultado) {
+                selecionarSwitch('blsResultado', pacienteAtual.blsResultado);
+            }
+            if (pacienteAtual.esvaziamentoFeito) {
+                selecionarSwitch('esvaziamentoSwitch', pacienteAtual.esvaziamentoFeito);
+            }
+            if (pacienteAtual.esvaziamentoResultado) {
+                selecionarSwitch('esvaziamentoResultado', pacienteAtual.esvaziamentoResultado);
+            }
+            if (pacienteAtual.re) {
+                selecionarSwitch('reSwitch', pacienteAtual.re);
+            }
+            if (pacienteAtual.rp) {
+                selecionarSwitch('rpSwitch', pacienteAtual.rp);
+            }
+            if (pacienteAtual.her2) {
+                selecionarSwitch('her2Switch', pacienteAtual.her2);
+            }
+        }
+        
+        function finalizarCadastro() {
+            if (!validarPassoAtual()) return;
+            
+            const dadosPaciente = coletarDadosCadastro();
+            
+            const pacientes = JSON.parse(localStorage.getItem('pacientes') || '{}');
+            
+            if (modoEdicao && pacienteAtual) {
+                dadosPaciente.avaliacoes = pacienteAtual.avaliacoes || {};
+            }
+            
+            pacientes[dadosPaciente.registro] = dadosPaciente;
+            localStorage.setItem('pacientes', JSON.stringify(pacientes));
+            
+            alert('✅ Cadastro salvo com sucesso!');
+            
+            pacienteAtual = dadosPaciente;
+            
+            if (modoEdicao) {
+                mostrarAcoesPaciente(pacienteAtual.registro);
+            } else {
+                iniciarNovaAvaliacao();
+            }
+        }
+        
+        function coletarDadosCadastro() {
+            return {
+                nome: document.getElementById('nome').value,
+                registro: document.getElementById('registro').value,
+                nascimento: document.getElementById('nascimento').value,
+                idade: document.getElementById('idade').value,
+                estadoCivil: document.getElementById('estadoCivil').value,
+                endereco: document.getElementById('endereco').value,
+                telefone: document.getElementById('telefone').value,
+                telefoneRecado: document.getElementById('telefoneRecado').value,
+                profissao: document.getElementById('profissao').value,
+                peso: document.getElementById('peso').value,
+                altura: document.getElementById('altura').value,
+                escolaridade: document.getElementById('escolaridade').value,
+                raca: document.getElementById('raca').value,
+                dominancia: document.getElementById('dominancia').value,
+                cirurgiaPrevia: obterSwitchSelecionado('cirurgiaPreviaSwitch'),
+                cirurgiaPreviaTexto: document.getElementById('cirurgiaPreviaTexto').value,
+                doencasAssociadas: obterChipsSelecionados('doencasAssociadas'),
+                outrasDoencas: document.getElementById('outrasDoencas').value,
+                antecedentesOrtopedicos: obterChipsSelecionados('antecedentesOrtopedicos'),
+                tabagismo: obterSwitchSelecionado('tabagismoSwitch'),
+                cigarrosDia: document.getElementById('cigarrosDia').value,
+                anosFumando: document.getElementById('anosFumando').value,
+                menopausa: obterSwitchSelecionado('menopausaSwitch'),
+                anticoncepcional: obterSwitchSelecionado('anticoncepcionalSwitch'),
+                tempoAnticoncepcional: document.getElementById('tempoAnticoncepcional').value,
+                medicamentos: document.getElementById('medicamentos').value,
+                dataCirurgia: document.getElementById('dataCirurgia').value,
+                ladoMama: obterChipsSelecionados('ladoMama'),
+                tipoCirurgia: obterChipsSelecionados('tipoCirurgia'),
+                blsFeito: obterSwitchSelecionado('blsSwitch'),
+                blsResultado: obterSwitchSelecionado('blsResultado'),
+                blsRetirados: document.getElementById('blsRetirados').value,
+                blsComprometidos: document.getElementById('blsComprometidos').value,
+                esvaziamentoFeito: obterSwitchSelecionado('esvaziamentoSwitch'),
+                esvaziamentoResultado: obterSwitchSelecionado('esvaziamentoResultado'),
+                esvaziamentoRetirados: document.getElementById('esvaziamentoRetirados').value,
+                esvaziamentoComprometidos: document.getElementById('esvaziamentoComprometidos').value,
+                reconstrucaoImediata: obterSwitchSelecionado('reconstrucaoSwitch'),
+                reconstrucaoTipos: obterChipsSelecionados('reconstrucaoTipos'),
+                obsCirurgia: document.getElementById('obsCirurgia').value,
+                tipoHistologico: obterChipsSelecionados('tipoHistologico'),
+                outroHistologico: document.getElementById('outroHistologico').value,
+                obsHistologico: document.getElementById('obsHistologico').value,
+                re: obterSwitchSelecionado('reSwitch'),
+                rp: obterSwitchSelecionado('rpSwitch'),
+                her2: obterSwitchSelecionado('her2Switch'),
+                ki67: document.getElementById('ki67').value,
+                doseRt: document.getElementById('doseRt').value,
+                dataInicioRt: document.getElementById('dataInicioRt').value,
+                dataFimRt: document.getElementById('dataFimRt').value,
+                numeroFracoes: document.getElementById('numeroFracoes').value,
+                frequenciaRt: document.getElementById('frequenciaRt').value,
+                dosePorFracao: document.getElementById('dosePorFracao').value,
+                boostRt: document.getElementById('boostRt').value,
+                fitzpatrick: obterChipsSelecionados('fitzpatrick')[0] || '',
+                avaliacoes: pacienteAtual?.avaliacoes || {}
+            };
+        }
+        
+        // =============================================
+        // AVALIAÇÃO
+        // =============================================
+        function limparFormularioAvaliacao() {
+            document.getElementById('eva').value = '';
+            document.getElementById('flexaoDir').value = '';
+            document.getElementById('flexaoEsq').value = '';
+            document.getElementById('extensaoDir').value = '';
+            document.getElementById('extensaoEsq').value = '';
+            document.getElementById('aducaoDir').value = '';
+            document.getElementById('aducaoEsq').value = '';
+            document.getElementById('abducaoDir').value = '';
+            document.getElementById('abducaoEsq').value = '';
+            document.getElementById('riDir').value = '';
+            document.getElementById('riEsq').value = '';
+            document.getElementById('reDir').value = '';
+            document.getElementById('reEsq').value = '';
+            document.getElementById('sensMama').value = '';
+            document.getElementById('sensAxila').value = '';
+            document.getElementById('sensBraco').value = '';
+            document.getElementById('dash').value = '';
+            document.getElementById('tamanhoMama').value = '';
+            document.getElementById('ptose').value = '';
+            document.getElementById('desconforto').value = '';
+            document.getElementById('motivoNaoAdesao').value = '';
+            
+            document.querySelectorAll('#rtoSwitch .switch-option').forEach(opt => opt.classList.remove('selected'));
+            document.querySelectorAll('#adesaoSwitch .switch-option').forEach(opt => {
+                opt.classList.remove('selected');
+                if (opt.dataset.value === 'sim') {
+                    opt.classList.add('selected');
+                }
+            });
+            
+            document.getElementById('motivoNaoAdesaoField').classList.remove('show');
+        }
+        
+        function salvarAvaliacao() {
+            if (!pacienteAtual) return;
+            
+            const dataAval = document.getElementById('dataAvaliacao').value;
+            if (!dataAval) {
+                alert('Data da avaliação é obrigatória!');
+                return;
+            }
+            
+            const eva = document.getElementById('eva').value;
+            if (!eva) {
+                alert('Nível de dor (EVA) é obrigatório!');
+                return;
+            }
+            
+            const dadosAvaliacao = {
+                data: dataAval,
+                rto: obterSwitchSelecionado('rtoSwitch'),
+                eva: eva,
+                goniometria: {
+                    dir: {
+                        flexao: document.getElementById('flexaoDir').value,
+                        extensao: document.getElementById('extensaoDir').value,
+                        aducao: document.getElementById('aducaoDir').value,
+                        abducao: document.getElementById('abducaoDir').value,
+                        ri: document.getElementById('riDir').value,
+                        re: document.getElementById('reDir').value
+                    },
+                    esq: {
+                        flexao: document.getElementById('flexaoEsq').value,
+                        extensao: document.getElementById('extensaoEsq').value,
+                        aducao: document.getElementById('aducaoEsq').value,
+                        abducao: document.getElementById('abducaoEsq').value,
+                        ri: document.getElementById('riEsq').value,
+                        re: document.getElementById('reEsq').value
+                    }
+                },
+                sensibilidade: {
+                    mama: document.getElementById('sensMama').value,
+                    axila: document.getElementById('sensAxila').value,
+                    braco: document.getElementById('sensBraco').value
+                },
+                dash: document.getElementById('dash').value,
+                tamanhoMama: document.getElementById('tamanhoMama').value,
+                ptose: document.getElementById('ptose').value,
+                desconforto: document.getElementById('desconforto').value,
+                adesao: obterSwitchSelecionado('adesaoSwitch'),
+                motivoNaoAdesao: document.getElementById('motivoNaoAdesao').value
+            };
+            
+            const pacientes = JSON.parse(localStorage.getItem('pacientes') || '{}');
+            const registro = pacienteAtual.registro;
+            
+            if (!pacientes[registro].avaliacoes) {
+                pacientes[registro].avaliacoes = {};
+            }
+            
+            if (avaliacaoEmEdicao) {
+                pacientes[registro].avaliacoes[avaliacaoEmEdicao] = dadosAvaliacao;
+                alert('✅ Avaliação atualizada com sucesso!');
+            } else {
+                const numAvaliacoes = Object.keys(pacientes[registro].avaliacoes).length;
+                const chaveAvaliacao = `aval_${dataAval.replace(/\//g, '')}_${numAvaliacoes + 1}`;
+                pacientes[registro].avaliacoes[chaveAvaliacao] = dadosAvaliacao;
+                alert('✅ Avaliação salva com sucesso!');
+            }
+            
+            localStorage.setItem('pacientes', JSON.stringify(pacientes));
+            
+            pacienteAtual = pacientes[registro];
+            avaliacaoEmEdicao = null;
+            
+            mostrarHistorico();
+        }
+        
+        // =============================================
+        // HISTÓRICO (TIMELINE)
+        // =============================================
+        function preencherTimeline() {
+            if (!pacienteAtual) return;
+            
+            const avaliacoes = pacienteAtual.avaliacoes || {};
+            const container = document.getElementById('timelineContainer');
+            
+            const avaliacoesArray = Object.entries(avaliacoes)
+                .sort((a, b) => {
+                    const dataA = a[1].data.split('/').reverse().join('-');
+                    const dataB = b[1].data.split('/').reverse().join('-');
+                    return new Date(dataB) - new Date(dataA);
+                });
+            
+            if (avaliacoesArray.length === 0) {
+                container.innerHTML = '<div class="no-results">Nenhuma avaliação registrada</div>';
+                return;
+            }
+            
+            container.innerHTML = avaliacoesArray.map(([key, aval], index) => `
+                <div class="timeline-item" onclick="mostrarDetalhesAvaliacao('${key}')">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-content">
+                        <div class="timeline-date">${aval.data} - Avaliação #${avaliacoesArray.length - index}</div>
+                        <div class="timeline-data">
+                            <div><strong>RTOG:</strong> Grau ${aval.rto || '-'}</div>
+                            <div><strong>EVA:</strong> ${aval.eva || '-'}/10</div>
+                            <div><strong>DASH:</strong> ${aval.dash || '-'}</div>
+                            <div><strong>Ptose:</strong> ${aval.ptose || '-'}</div>
+                        </div>
+                        <div class="timeline-hint">
+                            👆 Clique para ver todos os detalhes
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function mostrarDetalhesAvaliacao(chaveAvaliacao) {
+            if (!pacienteAtual || !pacienteAtual.avaliacoes) return;
+            
+            const avaliacao = pacienteAtual.avaliacoes[chaveAvaliacao];
+            if (!avaliacao) return;
+            
+            const modal = document.getElementById('detalhesModal');
+            const modalBody = document.getElementById('modalBody');
+            
+            document.getElementById('modalTitulo').textContent = `Avaliação de ${avaliacao.data}`;
+            
+            let html = `
+                <div class="modal-section">
+                    <h4>📊 Dados Gerais</h4>
+                    <div class="modal-field">
+                        <div class="modal-field-label">Data:</div>
+                        <div class="modal-field-value">${avaliacao.data || '-'}</div>
+                    </div>
+                    <div class="modal-field">
+                        <div class="modal-field-label">RTOG:</div>
+                        <div class="modal-field-value">Grau ${avaliacao.rto || '-'}</div>
+                    </div>
+                    <div class="modal-field">
+                        <div class="modal-field-label">Dor (EVA):</div>
+                        <div class="modal-field-value">${avaliacao.eva || '-'}/10</div>
+                    </div>
+                    <div class="modal-field">
+                        <div class="modal-field-label">DASH:</div>
+                        <div class="modal-field-value">${avaliacao.dash || '-'}</div>
+                    </div>
+                </div>
+                
+                <div class="modal-section">
+                    <h4>📐 Goniometria</h4>
+                    <h5>Lado Direito</h5>
+            `;
+            
+            if (avaliacao.goniometria?.dir) {
+                const dir = avaliacao.goniometria.dir;
+                html += `
+                    <div class="modal-field"><div class="modal-field-label">Flexão:</div><div class="modal-field-value">${dir.flexao || '-'}°</div></div>
+                    <div class="modal-field"><div class="modal-field-label">Extensão:</div><div class="modal-field-value">${dir.extensao || '-'}°</div></div>
+                    <div class="modal-field"><div class="modal-field-label">Adução:</div><div class="modal-field-value">${dir.aducao || '-'}°</div></div>
+                    <div class="modal-field"><div class="modal-field-label">Abdução:</div><div class="modal-field-value">${dir.abducao || '-'}°</div></div>
+                    <div class="modal-field"><div class="modal-field-label">Rotação Interna:</div><div class="modal-field-value">${dir.ri || '-'}°</div></div>
+                    <div class="modal-field"><div class="modal-field-label">Rotação Externa:</div><div class="modal-field-value">${dir.re || '-'}°</div></div>
+                `;
+            }
+            
+            html += `<h5>Lado Esquerdo</h5>`;
+            
+            if (avaliacao.goniometria?.esq) {
+                const esq = avaliacao.goniometria.esq;
+                html += `
+                    <div class="modal-field"><div class="modal-field-label">Flexão:</div><div class="modal-field-value">${esq.flexao || '-'}°</div></div>
+                    <div class="modal-field"><div class="modal-field-label">Extensão:</div><div class="modal-field-value">${esq.extensao || '-'}°</div></div>
+                    <div class="modal-field"><div class="modal-field-label">Adução:</div><div class="modal-field-value">${esq.aducao || '-'}°</div></div>
+                    <div class="modal-field"><div class="modal-field-label">Abdução:</div><div class="modal-field-value">${esq.abducao || '-'}°</div></div>
+                    <div class="modal-field"><div class="modal-field-label">Rotação Interna:</div><div class="modal-field-value">${esq.ri || '-'}°</div></div>
+                    <div class="modal-field"><div class="modal-field-label">Rotação Externa:</div><div class="modal-field-value">${esq.re || '-'}°</div></div>
+                `;
+            }
+            
+            html += `
+                </div>
+                
+                <div class="modal-section">
+                    <h4>🖐️ Sensibilidade</h4>
+                    <div class="modal-field"><div class="modal-field-label">Mama:</div><div class="modal-field-value">${avaliacao.sensibilidade?.mama || '-'}</div></div>
+                    <div class="modal-field"><div class="modal-field-label">Axila:</div><div class="modal-field-value">${avaliacao.sensibilidade?.axila || '-'}</div></div>
+                    <div class="modal-field"><div class="modal-field-label">Braço:</div><div class="modal-field-value">${avaliacao.sensibilidade?.braco || '-'}</div></div>
+                </div>
+                
+                <div class="modal-section">
+                    <h4>📏 Avaliação Mamária</h4>
+                    <div class="modal-field"><div class="modal-field-label">Tamanho:</div><div class="modal-field-value">${avaliacao.tamanhoMama || '-'} cm</div></div>
+                    <div class="modal-field"><div class="modal-field-label">Ptose:</div><div class="modal-field-value">${avaliacao.ptose || '-'}</div></div>
+                </div>
+                
+                <div class="modal-section">
+                    <h4>💡 Desconforto</h4>
+                    <div class="modal-field"><div class="modal-field-value">${avaliacao.desconforto || 'Nenhum relatado'}</div></div>
+                </div>
+                
+                <div class="modal-section">
+                    <h4>✅ Adesão</h4>
+                    <div class="modal-field"><div class="modal-field-label">Aderiu:</div><div class="modal-field-value">${avaliacao.adesao === 'sim' ? 'Sim' : 'Não'}</div></div>
+            `;
+            
+            if (avaliacao.adesao === 'nao' && avaliacao.motivoNaoAdesao) {
+                html += `
+                    <div class="modal-field"><div class="modal-field-label">Motivo:</div><div class="modal-field-value">${avaliacao.motivoNaoAdesao}</div></div>
+                `;
+            }
+            
+            html += `</div>`;
+            
+            modalBody.innerHTML = html;
+            modal.classList.add('active');
+        }
+        
+        function fecharModal() {
+            document.getElementById('detalhesModal').classList.remove('active');
+        }
+        
+        // =============================================
+        // FUNÇÕES AUXILIARES
+        // =============================================
+        function obterSwitchSelecionado(grupoId) {
+            const elemento = document.getElementById(grupoId);
+            if (!elemento) return '';
+            const selecionado = elemento.querySelector('.switch-option.selected');
+            return selecionado ? selecionado.dataset.value : '';
+        }
+        
+        function obterChipsSelecionados(grupoId) {
+            const elemento = document.getElementById(grupoId);
+            if (!elemento) return [];
+            const chips = elemento.querySelectorAll('.checkbox-chip.selected');
+            return Array.from(chips).map(c => c.dataset.value);
+        }
+        
+        function selecionarSwitch(grupoId, valor) {
+            const grupo = document.getElementById(grupoId);
+            if (!grupo) return;
+            grupo.querySelectorAll('.switch-option').forEach(opt => {
+                opt.classList.toggle('selected', opt.dataset.value === valor);
+            });
+            if (grupoId === 'reconstrucaoSwitch') {
+                document.getElementById('reconstrucaoDetalhe')?.classList.toggle('show', valor === 'sim');
+            }
+            if (grupoId === 'adesaoSwitch') {
+                document.getElementById('motivoNaoAdesaoField')?.classList.toggle('show', valor === 'nao');
+            }
+        }
+        
+        function selecionarChips(grupoId, valores) {
+            const grupo = document.getElementById(grupoId);
+            if (!grupo) return;
+            grupo.querySelectorAll('.checkbox-chip').forEach(chip => {
+                chip.classList.toggle('selected', valores.includes(chip.dataset.value));
+            });
+        }
+        
+        function calcularIdade(dataStr) {
+            const idadeInput = document.getElementById('idade');
+            if (!idadeInput) return;
+            
+            if (!dataStr || dataStr.length !== 10) {
+                idadeInput.value = '';
+                return;
+            }
+            
+            const partes = dataStr.split('/');
+            if (partes.length !== 3) return;
+            
+            const dataNasc = new Date(partes[2], partes[1] - 1, partes[0]);
+            const hoje = new Date();
+            
+            let idade = hoje.getFullYear() - dataNasc.getFullYear();
+            const mesAtual = hoje.getMonth();
+            const diaAtual = hoje.getDate();
+            
+            if (mesAtual < (partes[1] - 1) || (mesAtual === (partes[1] - 1) && diaAtual < partes[0])) {
+                idade--;
+            }
+            
+            idadeInput.value = (idade >= 0 && idade <= 120) ? idade + ' anos' : 'Data inválida';
+        }
+        
+        function verificarLadoBilateral() {
+            const ladoDireita = document.querySelector('#ladoMama .checkbox-chip[data-value="Direita"]');
+            const ladoEsquerda = document.querySelector('#ladoMama .checkbox-chip[data-value="Esquerda"]');
+            
+            if (!ladoDireita || !ladoEsquerda) return;
+            
+            const ambosSelecionados = ladoDireita.classList.contains('selected') && 
+                                      ladoEsquerda.classList.contains('selected');
+            
+            const tipoPorLado = document.getElementById('tipoPorLado');
+            const tipoDireitaDiv = document.getElementById('tipoPorLadoDireita');
+            const tipoEsquerdaDiv = document.getElementById('tipoPorLadoEsquerda');
+            
+            if (ambosSelecionados) {
+                tipoPorLado.classList.add('show');
+                tipoDireitaDiv.style.display = ladoDireita.classList.contains('selected') ? 'block' : 'none';
+                tipoEsquerdaDiv.style.display = ladoEsquerda.classList.contains('selected') ? 'block' : 'none';
+                
+                if (tipoDireitaDiv.style.display === 'block' && document.getElementById('tipoCirurgiaDireita').children.length === 0) {
+                    preencherTiposCirurgia('tipoCirurgiaDireita');
+                }
+                if (tipoEsquerdaDiv.style.display === 'block' && document.getElementById('tipoCirurgiaEsquerda').children.length === 0) {
+                    preencherTiposCirurgia('tipoCirurgiaEsquerda');
+                }
+            } else {
+                tipoPorLado.classList.remove('show');
+            }
+        }
+        
+        function preencherTiposCirurgia(containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            
+            const tipos = ['Mastectomia', 'Quadrantectomia', 'Nodulectomia', 'Setorectomia'];
+            tipos.forEach(tipo => {
+                const chip = document.createElement('div');
+                chip.className = 'checkbox-chip';
+                chip.dataset.value = tipo;
+                chip.textContent = tipo;
+                chip.addEventListener('click', function() {
+                    this.classList.toggle('selected');
+                });
+                container.appendChild(chip);
+            });
+        }
+        
+        // =============================================
+        // INICIALIZAÇÃO
+        // =============================================
+        window.addEventListener('load', function() {
+            configurarSwitches();
+            configurarCheckboxChips();
+            configurarMascaras();
+            configurarCalculoIdadeEvent();
+            atualizarResumoHome();
+        });
+        
+        function configurarSwitches() {
+            document.querySelectorAll('.switch-group').forEach(group => {
+                group.querySelectorAll('.switch-option').forEach(option => {
+                    option.addEventListener('click', function() {
+                        group.querySelectorAll('.switch-option').forEach(opt => 
+                            opt.classList.remove('selected'));
+                        this.classList.add('selected');
+                        
+                        const grupoId = group.id;
+                        const valor = this.dataset.value;
+                        
+                        if (grupoId === 'cirurgiaPreviaSwitch') {
+                            document.getElementById('cirurgiaPreviaDetalhe')?.classList.toggle('show', valor === 'sim');
+                        }
+                        if (grupoId === 'tabagismoSwitch') {
+                            document.getElementById('tabagismoDetalhe')?.classList.toggle('show', valor === 'sim');
+                        }
+                        if (grupoId === 'anticoncepcionalSwitch') {
+                            document.getElementById('anticoncepcionalDetalhe')?.classList.toggle('show', valor === 'sim');
+                        }
+                        if (grupoId === 'blsSwitch') {
+                            document.getElementById('blsDetalhe')?.classList.toggle('show', valor === 'sim');
+                        }
+                        if (grupoId === 'blsResultado') {
+                            document.getElementById('esvaziamentoField')?.classList.toggle('show', valor === 'positivo');
+                        }
+                        if (grupoId === 'esvaziamentoSwitch') {
+                            document.getElementById('esvaziamentoDetalhe')?.classList.toggle('show', valor === 'sim');
+                        }
+                        if (grupoId === 'reconstrucaoSwitch') {
+                            document.getElementById('reconstrucaoDetalhe')?.classList.toggle('show', valor === 'sim');
+                        }
+                        if (grupoId === 'adesaoSwitch') {
+                            document.getElementById('motivoNaoAdesaoField')?.classList.toggle('show', valor === 'nao');
+                        }
+                    });
+                });
+            });
+        }
+        
+        function configurarCheckboxChips() {
+            document.querySelectorAll('.checkbox-group').forEach(group => {
+                group.querySelectorAll('.checkbox-chip').forEach(chip => {
+                    chip.addEventListener('click', function() {
+                        if (group.id === 'fitzpatrick' || group.id === 'rtoSwitch') {
+                            group.querySelectorAll('.checkbox-chip').forEach(c => 
+                                c.classList.remove('selected'));
+                        }
+                        this.classList.toggle('selected');
+                        
+                        if (group.id === 'tipoHistologico') {
+                            const outrosSelecionado = Array.from(group.querySelectorAll('.checkbox-chip'))
+                                .some(c => c.classList.contains('selected') && c.dataset.value === 'Outros');
+                            document.getElementById('outroHistologicoField')?.classList.toggle('show', outrosSelecionado);
+                        }
+                        
+                        if (group.id === 'ladoMama') {
+                            verificarLadoBilateral();
+                        }
+                    });
+                });
+            });
+        }
+        
+        function configurarMascaras() {
+            const mascaraData = (e) => {
+                let value = e.target.value.replace(/\D/g, '');
+                if (value.length >= 2) value = value.slice(0,2) + '/' + value.slice(2);
+                if (value.length >= 5) value = value.slice(0,5) + '/' + value.slice(5,9);
+                e.target.value = value;
+                
+                if (e.target.id === 'nascimento') {
+                    calcularIdade(e.target.value);
+                }
+            };
+            
+            document.getElementById('nascimento')?.addEventListener('input', mascaraData);
+            document.getElementById('dataCirurgia')?.addEventListener('input', mascaraData);
+            document.getElementById('dataInicioRt')?.addEventListener('input', mascaraData);
+            document.getElementById('dataFimRt')?.addEventListener('input', mascaraData);
+            document.getElementById('dataAvaliacao')?.addEventListener('input', mascaraData);
+        }
+        
+        function configurarCalculoIdadeEvent() {
+            document.getElementById('nascimento')?.addEventListener('input', function(e) {
+                calcularIdade(e.target.value);
+            });
+        }
+        
+        document.addEventListener('click', function(e) {
+            const modal = document.getElementById('detalhesModal');
+            const modalAlegrar = document.getElementById('alegrarModal');
+            if (e.target === modal) {
+                fecharModal();
+            }
+            if (e.target === modalAlegrar) {
+                fecharModalAlegrar();
+            }
+        });
+    </script>
+    
+    <!-- Registro do Service Worker -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('sw.js')
+                    .then(function(registration) {
+                        console.log('✅ Service Worker registrado com sucesso!', registration.scope);
+                    })
+                    .catch(function(error) {
+                        console.log('❌ Erro ao registrar Service Worker:', error);
+                    });
+            });
+        }
+    </script>
+</body>
+</html>
