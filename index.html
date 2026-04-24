@@ -1688,7 +1688,31 @@
         // =============================================
         // FUNÇÃO ALEGRAR O MEU DIA
         // =============================================
+        
+        var imagensAlegrar = [
+            'alegrar1.jpg',
+            'alegrar2.jpg',
+            'alegrar3.jpg',
+            'alegrar4.jpg',
+            'alegrar5.jpg'
+        ];
+        
+        var ultimaImagemExibida = -1;
+        
         function alegrarMeuDia() {
+            var indiceAleatorio;
+            
+            // Sorteia uma imagem diferente da última exibida (se houver mais de uma)
+            do {
+                indiceAleatorio = Math.floor(Math.random() * imagensAlegrar.length);
+            } while (indiceAleatorio === ultimaImagemExibida && imagensAlegrar.length > 1);
+            
+            ultimaImagemExibida = indiceAleatorio;
+            
+            // Coloca a imagem sorteada no modal
+            document.getElementById('alegrarImagem').src = imagensAlegrar[indiceAleatorio];
+            
+            // Abre o modal
             document.getElementById('alegrarModal').classList.add('active');
         }
         
