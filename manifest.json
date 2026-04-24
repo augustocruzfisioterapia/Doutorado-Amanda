@@ -1,0 +1,58 @@
+{
+  "name": "Doutorado - Sistema de Avaliação",
+  "short_name": "Doutorado Amanda",
+  "description": "Aplicação desenvolvida com carinho para a pesquisa de doutorado da Amanda. Sistema completo para cadastro e avaliação de pacientes oncológicas, com goniometria, escalas validadas, histórico em timeline e exportação de dados. PWA instalável, funciona offline no tablet. Cada detalhe pensado com amor e ciência. 💜",
+  "start_url": "/Doutorado-Amanda/index.html",
+  "scope": "/Doutorado-Amanda/",
+  "display": "standalone",
+  "background_color": "#F5F7FA",
+  "theme_color": "#6C5CE7",
+  "orientation": "portrait-primary",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "icons/icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["medical", "education", "productivity"],
+  "prefer_related_applications": false
+}
