@@ -1687,43 +1687,45 @@
             localStorage.setItem('pacientes', JSON.stringify({}));
         }
         
-// =============================================
-// FUNÇÃO ALEGRAR O MEU DIA
-// =============================================
-
-// Lista de imagens (adicione quantas quiser)
-const imagensAlegrar = [
-    'alegrar1.jpg',
-    'alegrar2.jpg',
-    'alegrar3.jpg',
-    'alegrar4.jpg',
-    'alegrar5.jpg',
-    'alegrar6.jpg'
-];
-
-let ultimaImagemExibida = -1;
-
-function alegrarMeuDia() {
-    let indiceAleatorio;
-    
-    // Garante que não repita a mesma imagem seguida
-    do {
-        indiceAleatorio = Math.floor(Math.random() * imagensAlegrar.length);
-    } while (indiceAleatorio === ultimaImagemExibida && imagensAlegrar.length > 1);
-    
-    ultimaImagemExibida = indiceAleatorio;
-    
-    // Define a imagem sorteada
-    document.getElementById('alegrarImagem').src = imagensAlegrar[indiceAleatorio];
-    
-    // Mostra o modal
-    document.getElementById('alegrarModal').classList.add('active');
-}
-
-function fecharModalAlegrar() {
-    document.getElementById('alegrarModal').classList.remove('active');
-}
+        // =============================================
+        // FUNÇÃO ALEGRAR O MEU DIA
+        // =============================================
         
+        // Lista de imagens para o "Alegrar o meu dia"
+        var imagensAlegrar = [
+            'alegrar1.jpg',
+            'alegrar2.jpg',
+            'alegrar3.jpg',
+            'alegrar4.jpg',
+            'alegrar5.jpg',
+            'alegrar6.jpg'
+        ];
+        
+        var ultimaImagemExibida = -1;
+        
+        function alegrarMeuDia() {
+            var indiceAleatorio;
+            
+            // Garante que não repita a mesma imagem seguida
+            do {
+                indiceAleatorio = Math.floor(Math.random() * imagensAlegrar.length);
+            } while (indiceAleatorio === ultimaImagemExibida && imagensAlegrar.length > 1);
+            
+            ultimaImagemExibida = indiceAleatorio;
+            
+            // Define a imagem sorteada no modal
+            var imagem = document.getElementById('alegrarImagem');
+            if (imagem) {
+                imagem.src = imagensAlegrar[indiceAleatorio];
+            }
+            
+            // Mostra o modal
+            document.getElementById('alegrarModal').classList.add('active');
+        }
+        
+        function fecharModalAlegrar() {
+            document.getElementById('alegrarModal').classList.remove('active');
+        }
         // =============================================
         // EXPORTAÇÃO PARA EXCEL
         // =============================================
