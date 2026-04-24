@@ -1613,14 +1613,11 @@
         </div>
     </div>
 
-       <!-- Modal para a imagem "Alegrar o meu dia" -->
+    <!-- Modal para a imagem "Alegrar o meu dia" -->
     <div class="modal" id="alegrarModal">
         <div class="modal-image-content">
             <button class="modal-close-white" onclick="fecharModalAlegrar()">&times;</button>
-            <img src="" 
-                 alt="Alegrar o dia" 
-                 id="alegrarImagem"
-                 onerror="this.src='https://placehold.co/600x400/6C5CE7/FFFFFF?text=Alegrar+o+meu+dia'">
+            <img id="alegrarImagem" src="" alt="Alegrar o dia" onerror="this.src='https://placehold.co/600x400/6C5CE7/FFFFFF?text=Alegrar+o+meu+dia'">
         </div>
     </div>
     
@@ -1691,42 +1688,14 @@
         // =============================================
         // FUNÇÃO ALEGRAR O MEU DIA
         // =============================================
-        
-        // Lista de imagens para o "Alegrar o meu dia"
-        var imagensAlegrar = [
-            'alegrar1.jpg',
-            'alegrar2.jpg',
-            'alegrar3.jpg',
-            'alegrar4.jpg',
-            'alegrar5.jpg',
-            'alegrar6.jpg'
-        ];
-        
-        var ultimaImagemExibida = -1;
-        
         function alegrarMeuDia() {
-            var indiceAleatorio;
-            
-            // Garante que não repita a mesma imagem seguida
-            do {
-                indiceAleatorio = Math.floor(Math.random() * imagensAlegrar.length);
-            } while (indiceAleatorio === ultimaImagemExibida && imagensAlegrar.length > 1);
-            
-            ultimaImagemExibida = indiceAleatorio;
-            
-            // Define a imagem sorteada no modal
-            var imagem = document.getElementById('alegrarImagem');
-            if (imagem) {
-                imagem.src = imagensAlegrar[indiceAleatorio];
-            }
-            
-            // Mostra o modal
             document.getElementById('alegrarModal').classList.add('active');
         }
         
         function fecharModalAlegrar() {
             document.getElementById('alegrarModal').classList.remove('active');
         }
+        
         // =============================================
         // EXPORTAÇÃO PARA EXCEL
         // =============================================
